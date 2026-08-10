@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { listAccounts } from '../api/accounts'
 import { listCategories } from '../api/categories'
 import { createTransaction, deleteTransaction, listTransactions } from '../api/transactions'
 import CategoryBadge from '../components/CategoryBadge.jsx'
@@ -9,7 +10,7 @@ function formatCurrency(value) {
 
 const emptyForm = {
   category_id: '',
-  type: 'expense',
+  account_id: '',
   amount: '',
   description: '',
   date: new Date().toISOString().slice(0, 10),
@@ -18,6 +19,7 @@ const emptyForm = {
 export default function Transactions() {
   const [transactions, setTransactions] = useState([])
   const [categories, setCategories] = useState([])
+  const [accounts, setAccounts] = useState([])
   const [form, setForm] = useState(emptyForm)
   const [loading, setLoading] = useState(true)
 
@@ -27,17 +29,27 @@ export default function Transactions() {
 
   function load() {
     setLoading(true)
-    Promise.all([listTransactions(), listCategories()])
-      .then(([transactionsResponse, categoriesResponse]) => {
+    Promise.all([listTransactions(), listCategories(), listAccounts()])
+      .then(([transactionsResponse, categoriesResponse, accountsResponse]) => {
         setTransactions(transactionsResponse.data)
         setCategories(categoriesResponse)
+        setAccounts(accountsResponse)
       })
       .finally(() => setLoading(false))
   }
 
+  const selectedCategory = useMemo(
+    () => categories.find((category) => String(category.id) === String(form.category_id)),
+    [categories, form.category_id],
+  )
+
   async function handleSubmit(event) {
     event.preventDefault()
-    await createTransaction({ ...form, amount: Number(form.amount) })
+    await createTransaction({
+      ...form,
+      account_id: form.account_id || null,
+      amount: Number(form.amount),
+    })
     setForm(emptyForm)
     load()
   }
@@ -51,28 +63,44 @@ export default function Transactions() {
     <div className="space-y-6">
       <h1 className="text-xl font-semibold text-slate-900">Transações</h1>
 
-      <form onSubmit={handleSubmit} className="grid gap-3 rounded-xl bg-white p-5 shadow-sm sm:grid-cols-5">
-        <select
-          required
-          value={form.category_id}
-          onChange={(event) => setForm({ ...form, category_id: event.target.value })}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-        >
-          <option value="">Categoria</option>
-          {categories.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
+      <form onSubmit={handleSubmit} className="grid gap-3 rounded-xl bg-white p-5 shadow-sm sm:grid-cols-6">
+        <div className="flex items-center gap-2 sm:col-span-2">
+          <select
+            required
+            value={form.category_id}
+            onChange={(event) => setForm({ ...form, category_id: event.target.value })}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          >
+            <option value="">Categoria</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+
+          {selectedCategory && (
+            <span
+              className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${
+                selectedCategory.type === 'income' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+              }`}
+            >
+              {selectedCategory.type === 'income' ? 'Receita' : 'Despesa'}
+            </span>
+          )}
+        </div>
 
         <select
-          value={form.type}
-          onChange={(event) => setForm({ ...form, type: event.target.value })}
+          value={form.account_id}
+          onChange={(event) => setForm({ ...form, account_id: event.target.value })}
           className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
         >
-          <option value="income">Receita</option>
-          <option value="expense">Despesa</option>
+          <option value="">Sem conta</option>
+          {accounts.map((account) => (
+            <option key={account.id} value={account.id}>
+              {account.name}
+            </option>
+          ))}
         </select>
 
         <input
@@ -104,7 +132,7 @@ export default function Transactions() {
 
         <button
           type="submit"
-          className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 sm:col-span-5"
+          className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 sm:col-span-6"
         >
           Adicionar
         </button>
@@ -119,12 +147,13 @@ export default function Transactions() {
               <li key={transaction.id} className="flex items-center justify-between py-3 text-sm">
                 <div className="flex items-center gap-3">
                   <CategoryBadge category={transaction.category} />
+                  {transaction.account && <span className="text-xs text-slate-400">{transaction.account.name}</span>}
                   <span className="text-slate-600">{transaction.description || '-'}</span>
                   <span className="text-slate-400">{transaction.date}</span>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className={transaction.type === 'income' ? 'text-emerald-600' : 'text-red-600'}>
-                    {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
+                  <span className={transaction.category.type === 'income' ? 'text-emerald-600' : 'text-red-600'}>
+                    {transaction.category.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
                   </span>
                   <button onClick={() => handleDelete(transaction.id)} className="text-slate-400 hover:text-red-600">
                     Remover

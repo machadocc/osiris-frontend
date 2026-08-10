@@ -20,8 +20,8 @@ export default function Dashboard() {
       .finally(() => setLoading(false))
   }, [])
 
-  const income = transactions.filter((t) => t.type === 'income').reduce((sum, t) => sum + t.amount, 0)
-  const expense = transactions.filter((t) => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0)
+  const income = transactions.filter((t) => t.category.type === 'income').reduce((sum, t) => sum + t.amount, 0)
+  const expense = transactions.filter((t) => t.category.type === 'expense').reduce((sum, t) => sum + t.amount, 0)
   const balance = income - expense
 
   if (loading) {
@@ -58,8 +58,8 @@ export default function Dashboard() {
                 <CategoryBadge category={transaction.category} />
                 <span className="text-slate-600">{transaction.description || '-'}</span>
               </div>
-              <span className={transaction.type === 'income' ? 'text-emerald-600' : 'text-red-600'}>
-                {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
+              <span className={transaction.category.type === 'income' ? 'text-emerald-600' : 'text-red-600'}>
+                {transaction.category.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
               </span>
             </li>
           ))}

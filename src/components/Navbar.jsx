@@ -5,7 +5,8 @@ const links = [
   { to: '/', label: 'Painel' },
   { to: '/transactions', label: 'Transações' },
   { to: '/categories', label: 'Categorias' },
-  { to: '/budgets', label: 'Metas' },
+  { to: '/accounts', label: 'Contas' },
+  { to: '/spending-limits', label: 'Limites de gastos' },
 ]
 
 export default function Navbar() {

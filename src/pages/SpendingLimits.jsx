@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { listCategories } from '../api/categories'
-import { createBudget, deleteBudget, listBudgets } from '../api/budgets'
+import { createSpendingLimit, deleteSpendingLimit, listSpendingLimits } from '../api/spendingLimits'
 
 function formatCurrency(value) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -12,8 +12,8 @@ function currentMonth() {
 
 const emptyForm = { category_id: '', name: '', limit_amount: '', reference_month: `${currentMonth()}-01` }
 
-export default function Budgets() {
-  const [budgets, setBudgets] = useState([])
+export default function SpendingLimits() {
+  const [spendingLimits, setSpendingLimits] = useState([])
   const [categories, setCategories] = useState([])
   const [form, setForm] = useState(emptyForm)
   const [loading, setLoading] = useState(true)
@@ -24,9 +24,9 @@ export default function Budgets() {
 
   function load() {
     setLoading(true)
-    Promise.all([listBudgets(), listCategories()])
-      .then(([budgetsData, categoriesData]) => {
-        setBudgets(budgetsData)
+    Promise.all([listSpendingLimits(), listCategories()])
+      .then(([spendingLimitsData, categoriesData]) => {
+        setSpendingLimits(spendingLimitsData)
         setCategories(categoriesData)
       })
       .finally(() => setLoading(false))
@@ -34,7 +34,7 @@ export default function Budgets() {
 
   async function handleSubmit(event) {
     event.preventDefault()
-    await createBudget({
+    await createSpendingLimit({
       ...form,
       category_id: form.category_id || null,
       limit_amount: Number(form.limit_amount),
@@ -44,19 +44,19 @@ export default function Budgets() {
   }
 
   async function handleDelete(id) {
-    await deleteBudget(id)
+    await deleteSpendingLimit(id)
     load()
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold text-slate-900">Metas orçamentárias</h1>
+      <h1 className="text-xl font-semibold text-slate-900">Limites de gastos</h1>
 
       <form onSubmit={handleSubmit} className="grid gap-3 rounded-xl bg-white p-5 shadow-sm sm:grid-cols-5">
         <input
           type="text"
           required
-          placeholder="Nome da meta"
+          placeholder="Nome do limite"
           value={form.name}
           onChange={(event) => setForm({ ...form, name: event.target.value })}
           className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
@@ -80,7 +80,7 @@ export default function Budgets() {
           step="0.01"
           min="0.01"
           required
-          placeholder="Limite"
+          placeholder="Valor limite"
           value={form.limit_amount}
           onChange={(event) => setForm({ ...form, limit_amount: event.target.value })}
           className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
@@ -102,32 +102,34 @@ export default function Budgets() {
       <div className="grid gap-4 sm:grid-cols-2">
         {loading && <p className="text-sm text-slate-500">Carregando...</p>}
 
-        {!loading && budgets.length === 0 && <p className="text-sm text-slate-400">Nenhuma meta cadastrada.</p>}
+        {!loading && spendingLimits.length === 0 && (
+          <p className="text-sm text-slate-400">Nenhum limite de gasto cadastrado.</p>
+        )}
 
-        {budgets.map((budget) => (
-          <div key={budget.id} className="rounded-xl bg-white p-5 shadow-sm">
+        {spendingLimits.map((spendingLimit) => (
+          <div key={spendingLimit.id} className="rounded-xl bg-white p-5 shadow-sm">
             <div className="flex items-start justify-between">
               <div>
-                <p className="font-medium text-slate-900">{budget.name}</p>
-                <p className="text-xs text-slate-500">{budget.category?.name ?? 'Todas as categorias'}</p>
+                <p className="font-medium text-slate-900">{spendingLimit.name}</p>
+                <p className="text-xs text-slate-500">{spendingLimit.category?.name ?? 'Todas as categorias'}</p>
               </div>
-              <button onClick={() => handleDelete(budget.id)} className="text-xs text-slate-400 hover:text-red-600">
+              <button onClick={() => handleDelete(spendingLimit.id)} className="text-xs text-slate-400 hover:text-red-600">
                 Remover
               </button>
             </div>
 
             <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100">
               <div
-                className={`h-full rounded-full ${budget.percentage >= 100 ? 'bg-red-500' : 'bg-emerald-500'}`}
-                style={{ width: `${budget.percentage}%` }}
+                className={`h-full rounded-full ${spendingLimit.percentage >= 100 ? 'bg-red-500' : 'bg-emerald-500'}`}
+                style={{ width: `${spendingLimit.percentage}%` }}
               />
             </div>
 
             <div className="mt-2 flex justify-between text-xs text-slate-500">
               <span>
-                {formatCurrency(budget.spent_amount)} de {formatCurrency(budget.limit_amount)}
+                {formatCurrency(spendingLimit.spent_amount)} de {formatCurrency(spendingLimit.limit_amount)}
               </span>
-              <span>{budget.percentage}%</span>
+              <span>{spendingLimit.percentage}%</span>
             </div>
           </div>
         ))}
