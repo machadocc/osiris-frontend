@@ -61,15 +61,18 @@ export default function Transactions() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold text-slate-900">Transações</h1>
+      <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Transações</h1>
 
-      <form onSubmit={handleSubmit} className="grid gap-3 rounded-xl bg-white p-5 shadow-sm sm:grid-cols-6">
+      <form
+        onSubmit={handleSubmit}
+        className="grid gap-3 rounded-xl bg-white p-5 shadow-sm sm:grid-cols-6 dark:bg-slate-900"
+      >
         <div className="flex items-center gap-2 sm:col-span-2">
           <select
             required
             value={form.category_id}
             onChange={(event) => setForm({ ...form, category_id: event.target.value })}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
           >
             <option value="">Categoria</option>
             {categories.map((category) => (
@@ -82,7 +85,9 @@ export default function Transactions() {
           {selectedCategory && (
             <span
               className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${
-                selectedCategory.type === 'income' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                selectedCategory.type === 'income'
+                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'
+                  : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
               }`}
             >
               {selectedCategory.type === 'income' ? 'Receita' : 'Despesa'}
@@ -93,7 +98,7 @@ export default function Transactions() {
         <select
           value={form.account_id}
           onChange={(event) => setForm({ ...form, account_id: event.target.value })}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
         >
           <option value="">Sem conta</option>
           {accounts.map((account) => (
@@ -111,7 +116,7 @@ export default function Transactions() {
           placeholder="Valor"
           value={form.amount}
           onChange={(event) => setForm({ ...form, amount: event.target.value })}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
         />
 
         <input
@@ -119,7 +124,7 @@ export default function Transactions() {
           placeholder="Descrição"
           value={form.description}
           onChange={(event) => setForm({ ...form, description: event.target.value })}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
         />
 
         <input
@@ -127,42 +132,53 @@ export default function Transactions() {
           required
           value={form.date}
           onChange={(event) => setForm({ ...form, date: event.target.value })}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
         />
 
         <button
           type="submit"
-          className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 sm:col-span-6"
+          className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 sm:col-span-6 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
         >
           Adicionar
         </button>
       </form>
 
-      <div className="rounded-xl bg-white p-5 shadow-sm">
+      <div className="rounded-xl bg-white p-5 shadow-sm dark:bg-slate-900">
         {loading ? (
-          <p className="text-sm text-slate-500">Carregando...</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Carregando...</p>
         ) : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-slate-100 dark:divide-slate-800">
             {transactions.map((transaction) => (
               <li key={transaction.id} className="flex items-center justify-between py-3 text-sm">
                 <div className="flex items-center gap-3">
                   <CategoryBadge category={transaction.category} />
-                  {transaction.account && <span className="text-xs text-slate-400">{transaction.account.name}</span>}
-                  <span className="text-slate-600">{transaction.description || '-'}</span>
-                  <span className="text-slate-400">{transaction.date}</span>
+                  {transaction.account && (
+                    <span className="text-xs text-slate-400 dark:text-slate-500">{transaction.account.name}</span>
+                  )}
+                  <span className="text-slate-600 dark:text-slate-300">{transaction.description || '-'}</span>
+                  <span className="text-slate-400 dark:text-slate-500">{transaction.date}</span>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className={transaction.category.type === 'income' ? 'text-emerald-600' : 'text-red-600'}>
+                  <span
+                    className={
+                      transaction.category.type === 'income'
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-red-600 dark:text-red-400'
+                    }
+                  >
                     {transaction.category.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
                   </span>
-                  <button onClick={() => handleDelete(transaction.id)} className="text-slate-400 hover:text-red-600">
+                  <button
+                    onClick={() => handleDelete(transaction.id)}
+                    className="text-slate-400 hover:text-red-600 dark:text-slate-500 dark:hover:text-red-400"
+                  >
                     Remover
                   </button>
                 </div>
               </li>
             ))}
             {transactions.length === 0 && (
-              <p className="py-4 text-center text-sm text-slate-400">Nenhuma transação cadastrada.</p>
+              <p className="py-4 text-center text-sm text-slate-400 dark:text-slate-500">Nenhuma transação cadastrada.</p>
             )}
           </ul>
         )}

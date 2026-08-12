@@ -37,16 +37,19 @@ export default function Accounts() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold text-slate-900">Contas</h1>
+      <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Contas</h1>
 
-      <form onSubmit={handleSubmit} className="grid gap-3 rounded-xl bg-white p-5 shadow-sm sm:grid-cols-3">
+      <form
+        onSubmit={handleSubmit}
+        className="grid gap-3 rounded-xl bg-white p-5 shadow-sm sm:grid-cols-3 dark:bg-slate-900"
+      >
         <input
           type="text"
           required
           placeholder="Nome da conta"
           value={form.name}
           onChange={(event) => setForm({ ...form, name: event.target.value })}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
         />
 
         <input
@@ -54,32 +57,46 @@ export default function Accounts() {
           placeholder="Instituição financeira (opcional)"
           value={form.institution}
           onChange={(event) => setForm({ ...form, institution: event.target.value })}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
         />
 
-        <button type="submit" className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800">
+        <button
+          type="submit"
+          className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
+        >
           Adicionar
         </button>
       </form>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {loading && <p className="text-sm text-slate-500">Carregando...</p>}
+        {loading && <p className="text-sm text-slate-500 dark:text-slate-400">Carregando...</p>}
 
-        {!loading && accounts.length === 0 && <p className="text-sm text-slate-400">Nenhuma conta cadastrada.</p>}
+        {!loading && accounts.length === 0 && (
+          <p className="text-sm text-slate-400 dark:text-slate-500">Nenhuma conta cadastrada.</p>
+        )}
 
         {accounts.map((account) => (
-          <div key={account.id} className="rounded-xl bg-white p-5 shadow-sm">
+          <div key={account.id} className="rounded-xl bg-white p-5 shadow-sm dark:bg-slate-900">
             <div className="flex items-start justify-between">
               <div>
-                <p className="font-medium text-slate-900">{account.name}</p>
-                {account.institution && <p className="text-xs text-slate-500">{account.institution}</p>}
+                <p className="font-medium text-slate-900 dark:text-slate-100">{account.name}</p>
+                {account.institution && (
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{account.institution}</p>
+                )}
               </div>
-              <button onClick={() => handleDelete(account.id)} className="text-xs text-slate-400 hover:text-red-600">
+              <button
+                onClick={() => handleDelete(account.id)}
+                className="text-xs text-slate-400 hover:text-red-600 dark:text-slate-500 dark:hover:text-red-400"
+              >
                 Remover
               </button>
             </div>
 
-            <p className={`mt-3 text-lg font-semibold ${account.balance >= 0 ? 'text-slate-900' : 'text-red-600'}`}>
+            <p
+              className={`mt-3 text-lg font-semibold ${
+                account.balance >= 0 ? 'text-slate-900 dark:text-slate-100' : 'text-red-600 dark:text-red-400'
+              }`}
+            >
               {formatCurrency(account.balance)}
             </p>
           </div>

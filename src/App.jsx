@@ -8,6 +8,7 @@ import Transactions from './pages/Transactions.jsx'
 import Categories from './pages/Categories.jsx'
 import Accounts from './pages/Accounts.jsx'
 import SpendingLimits from './pages/SpendingLimits.jsx'
+import Settings from './pages/Settings.jsx'
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
           <Route path="/categories" element={<Categories />} />
           <Route path="/accounts" element={<Accounts />} />
           <Route path="/spending-limits" element={<SpendingLimits />} />
+          <Route path="/settings" element={<Settings />} />
         </Route>
       </Route>
     </Routes>
