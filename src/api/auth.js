@@ -13,11 +13,11 @@ export function logout() {
 }
 
 export function me() {
-  return api.get('/auth/me').then((response) => response.data)
+  return api.get('/auth/me').then((response) => response.data.data)
 }
 
 export function updateProfile(data) {
-  return api.put('/auth/me', data).then((response) => response.data)
+  return api.put('/auth/me', data).then((response) => response.data.data)
 }
 
 export function changePassword(data) {
