@@ -47,7 +47,21 @@ function extractDescription(text) {
   return line ? line.slice(0, 255) : null
 }
 
-export async function extractReceiptData(file, onProgress) {
+const DIACRITICS_RANGE_START = String.fromCharCode(0x0300)
+const DIACRITICS_RANGE_END = String.fromCharCode(0x036f)
+const DIACRITICS_REGEX = new RegExp(`[${DIACRITICS_RANGE_START}-${DIACRITICS_RANGE_END}]`, 'g')
+
+function normalize(value) {
+  return value.normalize('NFD').replace(DIACRITICS_REGEX, '').toLowerCase()
+}
+
+function matchCategory(text, categories) {
+  const normalizedText = normalize(text)
+
+  return categories.find((category) => normalizedText.includes(normalize(category.name))) ?? null
+}
+
+export async function extractReceiptData(file, categories, onProgress) {
   const worker = await createWorker('por', 1, {
     logger: (message) => {
       if (message.status === 'recognizing text') {
@@ -61,10 +75,13 @@ export async function extractReceiptData(file, onProgress) {
       data: { text },
     } = await worker.recognize(file)
 
+    const matchedCategory = matchCategory(text, categories)
+
     return {
       amount: extractAmount(text),
       date: extractDate(text),
       description: extractDescription(text),
+      categoryId: matchedCategory?.id ?? null,
     }
   } finally {
     await worker.terminate()

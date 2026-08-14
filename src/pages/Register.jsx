@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
+import Logo from '../components/Logo.jsx'
 
 export default function Register() {
   const { register } = useAuth()
@@ -25,7 +26,9 @@ export default function Register() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 dark:bg-slate-950">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-slate-50 px-4 py-8 dark:bg-slate-950">
+      <Logo size="lg" />
+
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-sm space-y-4 rounded-xl bg-white p-8 shadow-sm dark:bg-slate-900"

@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router-dom'
+import InstallPrompt from './InstallPrompt.jsx'
 import Sidebar from './Sidebar.jsx'
 
 export default function Layout() {
@@ -8,6 +9,7 @@ export default function Layout() {
       <main className="flex-1 overflow-y-auto px-6 py-6">
         <Outlet />
       </main>
+      <InstallPrompt />
     </div>
   )
 }

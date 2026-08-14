@@ -28,6 +28,61 @@ function percentChange(current, previous) {
   return ((current - previous) / previous) * 100
 }
 
+function monthShortLabel(monthStr) {
+  const [year, month] = monthStr.split('-').map(Number)
+  return new Date(year, month - 1, 1).toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')
+}
+
+function BalanceHistoryChart({ data }) {
+  const width = 600
+  const height = 140
+  const padding = 20
+
+  const values = data.map((point) => point.balance)
+  const max = Math.max(...values, 0)
+  const min = Math.min(...values, 0)
+  const range = max - min || 1
+
+  const points = data.map((point, index) => ({
+    x: padding + (index * (width - padding * 2)) / Math.max(data.length - 1, 1),
+    y: height - padding - ((point.balance - min) / range) * (height - padding * 2),
+    ...point,
+  }))
+
+  const zeroY = height - padding - ((0 - min) / range) * (height - padding * 2)
+
+  return (
+    <div>
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-[140px] w-full" preserveAspectRatio="none">
+        {min < 0 && max > 0 && (
+          <line
+            x1={padding}
+            y1={zeroY}
+            x2={width - padding}
+            y2={zeroY}
+            strokeDasharray="4 4"
+            className="stroke-slate-200 dark:stroke-slate-700"
+          />
+        )}
+        <polyline
+          points={points.map((point) => `${point.x},${point.y}`).join(' ')}
+          fill="none"
+          strokeWidth="2"
+          className="stroke-indigo-500 dark:stroke-indigo-400"
+        />
+        {points.map((point) => (
+          <circle key={point.month} cx={point.x} cy={point.y} r="3" className="fill-indigo-500 dark:fill-indigo-400" />
+        ))}
+      </svg>
+      <div className="mt-1 flex justify-between text-xs text-slate-400 dark:text-slate-500">
+        {data.map((point) => (
+          <span key={point.month}>{monthShortLabel(point.month)}</span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function ComparisonBadge({ current, previous, positiveIsGood = true }) {
   const change = percentChange(current, previous)
   if (change === null) return null
@@ -135,6 +190,11 @@ export default function Dashboard() {
           </p>
           <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">Total acumulado, não só do mês</p>
         </div>
+      </div>
+
+      <div className="rounded-xl bg-white p-5 shadow-sm dark:bg-slate-900">
+        <h2 className="mb-4 text-sm font-medium text-slate-700 dark:text-slate-300">Evolução do saldo (6 meses)</h2>
+        <BalanceHistoryChart data={summary.balance_history} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
