@@ -3,6 +3,7 @@ import { listAccounts } from '../api/accounts'
 import { listCategories } from '../api/categories'
 import { createTransaction, deleteTransaction, listTransactions } from '../api/transactions'
 import CategoryBadge from '../components/CategoryBadge.jsx'
+import ReceiptInput from '../components/ReceiptInput.jsx'
 
 function formatCurrency(value) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -14,6 +15,7 @@ const emptyForm = {
   amount: '',
   description: '',
   date: new Date().toISOString().slice(0, 10),
+  receipt: null,
 }
 
 export default function Transactions() {
@@ -22,6 +24,7 @@ export default function Transactions() {
   const [accounts, setAccounts] = useState([])
   const [form, setForm] = useState(emptyForm)
   const [loading, setLoading] = useState(true)
+  const [viewingReceipt, setViewingReceipt] = useState(null)
 
   useEffect(() => {
     load()
@@ -42,6 +45,15 @@ export default function Transactions() {
     () => categories.find((category) => String(category.id) === String(form.category_id)),
     [categories, form.category_id],
   )
+
+  function handleReceiptExtracted(data) {
+    setForm((current) => ({
+      ...current,
+      amount: data.amount ?? current.amount,
+      date: data.date ?? current.date,
+      description: data.description ?? current.description,
+    }))
+  }
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -135,6 +147,12 @@ export default function Transactions() {
           className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
         />
 
+        <ReceiptInput
+          file={form.receipt}
+          onFileChange={(receipt) => setForm((current) => ({ ...current, receipt }))}
+          onExtracted={handleReceiptExtracted}
+        />
+
         <button
           type="submit"
           className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 sm:col-span-6 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
@@ -151,6 +169,15 @@ export default function Transactions() {
             {transactions.map((transaction) => (
               <li key={transaction.id} className="flex items-center justify-between py-3 text-sm">
                 <div className="flex items-center gap-3">
+                  {transaction.receipt_url && (
+                    <button type="button" onClick={() => setViewingReceipt(transaction.receipt_url)}>
+                      <img
+                        src={transaction.receipt_url}
+                        alt="Comprovante"
+                        className="h-10 w-10 rounded object-cover ring-1 ring-slate-200 dark:ring-slate-700"
+                      />
+                    </button>
+                  )}
                   <CategoryBadge category={transaction.category} />
                   {transaction.account && (
                     <span className="text-xs text-slate-400 dark:text-slate-500">{transaction.account.name}</span>
@@ -183,6 +210,15 @@ export default function Transactions() {
           </ul>
         )}
       </div>
+
+      {viewingReceipt && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setViewingReceipt(null)}
+        >
+          <img src={viewingReceipt} alt="Comprovante ampliado" className="max-h-full max-w-full rounded-lg" />
+        </div>
+      )}
     </div>
   )
 }
