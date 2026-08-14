@@ -60,22 +60,22 @@ export default function Settings() {
   }
 
   const inputClass =
-    'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-slate-500'
-  const labelClass = 'text-sm text-slate-600 dark:text-slate-400'
+    'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:focus:border-neutral-500'
+  const labelClass = 'text-sm text-slate-600 dark:text-neutral-400'
 
   return (
     <div className="max-w-xl space-y-6">
-      <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Configurações</h1>
+      <h1 className="text-xl font-semibold text-slate-900 dark:text-neutral-100">Configurações</h1>
 
-      <div className="space-y-4 rounded-xl bg-white p-6 shadow-sm dark:bg-slate-900">
-        <h2 className="text-sm font-medium text-slate-700 dark:text-slate-300">Aparência</h2>
+      <div className="space-y-4 rounded-xl bg-white p-6 shadow-sm dark:bg-neutral-900">
+        <h2 className="text-sm font-medium text-slate-700 dark:text-neutral-300">Aparência</h2>
 
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-slate-700 dark:text-slate-300">
+            <p className="text-sm text-slate-700 dark:text-neutral-300">
               {theme === 'dark' ? 'Modo escuro' : 'Modo claro'}
             </p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Escolha como o sistema deve ser exibido para você.</p>
+            <p className="text-xs text-slate-500 dark:text-neutral-400">Escolha como o sistema deve ser exibido para você.</p>
           </div>
           <button
             type="button"
@@ -97,9 +97,9 @@ export default function Settings() {
 
       <form
         onSubmit={handleProfileSubmit}
-        className="space-y-4 rounded-xl bg-white p-6 shadow-sm dark:bg-slate-900"
+        className="space-y-4 rounded-xl bg-white p-6 shadow-sm dark:bg-neutral-900"
       >
-        <h2 className="text-sm font-medium text-slate-700 dark:text-slate-300">Meus dados</h2>
+        <h2 className="text-sm font-medium text-slate-700 dark:text-neutral-300">Meus dados</h2>
 
         {profileError && <p className="text-sm text-red-600 dark:text-red-400">{profileError}</p>}
         {profileSuccess && <p className="text-sm text-emerald-600 dark:text-emerald-400">Dados atualizados com sucesso.</p>}
@@ -129,7 +129,7 @@ export default function Settings() {
         <button
           type="submit"
           disabled={savingProfile}
-          className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
+          className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
         >
           {savingProfile ? 'Salvando...' : 'Salvar dados'}
         </button>
@@ -137,9 +137,9 @@ export default function Settings() {
 
       <form
         onSubmit={handlePasswordSubmit}
-        className="space-y-4 rounded-xl bg-white p-6 shadow-sm dark:bg-slate-900"
+        className="space-y-4 rounded-xl bg-white p-6 shadow-sm dark:bg-neutral-900"
       >
-        <h2 className="text-sm font-medium text-slate-700 dark:text-slate-300">Alterar senha</h2>
+        <h2 className="text-sm font-medium text-slate-700 dark:text-neutral-300">Alterar senha</h2>
 
         {passwordError && <p className="text-sm text-red-600 dark:text-red-400">{passwordError}</p>}
         {passwordSuccess && <p className="text-sm text-emerald-600 dark:text-emerald-400">Senha alterada com sucesso.</p>}
@@ -180,7 +180,7 @@ export default function Settings() {
         <button
           type="submit"
           disabled={savingPassword}
-          className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
+          className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
         >
           {savingPassword ? 'Salvando...' : 'Alterar senha'}
         </button>

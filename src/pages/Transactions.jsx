@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { listAccounts } from '../api/accounts'
 import { listCategories } from '../api/categories'
-import { createTransaction, deleteTransaction, listTransactions } from '../api/transactions'
+import { createTransaction, deleteTransaction, listTransactions, updateTransaction } from '../api/transactions'
 import { listSpendingLimits } from '../api/spendingLimits'
 import CategoryBadge from '../components/CategoryBadge.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
@@ -31,6 +31,8 @@ export default function Transactions() {
   const [showForm, setShowForm] = useState(false)
   const [viewingReceipt, setViewingReceipt] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
+  const [editingTransaction, setEditingTransaction] = useState(null)
+  const [removeExistingReceipt, setRemoveExistingReceipt] = useState(false)
   const [search, setSearch] = useState('')
   const [duplicateWarning, setDuplicateWarning] = useState(null)
   const [descriptionSuggestion, setDescriptionSuggestion] = useState(null)
@@ -140,8 +142,31 @@ export default function Transactions() {
     }
   }
 
+  function openCreateForm() {
+    setEditingTransaction(null)
+    setRemoveExistingReceipt(false)
+    setForm(emptyForm)
+    setShowForm(true)
+  }
+
+  function openEditForm(transaction) {
+    setEditingTransaction(transaction)
+    setRemoveExistingReceipt(false)
+    setForm({
+      category_id: transaction.category.id,
+      account_id: transaction.account?.id ?? '',
+      amount: String(transaction.amount),
+      description: transaction.description ?? '',
+      date: transaction.date,
+      receipt: null,
+    })
+    setShowForm(true)
+  }
+
   function closeForm() {
     setShowForm(false)
+    setEditingTransaction(null)
+    setRemoveExistingReceipt(false)
     setForm(emptyForm)
     setDuplicateWarning(null)
     setDescriptionSuggestion(null)
@@ -149,11 +174,20 @@ export default function Transactions() {
 
   async function handleSubmit(event) {
     event.preventDefault()
-    await createTransaction({
+
+    const payload = {
       ...form,
       account_id: form.account_id || null,
       amount: Number(form.amount),
-    })
+    }
+
+    if (editingTransaction) {
+      if (removeExistingReceipt && !form.receipt) payload.remove_receipt = 1
+      await updateTransaction(editingTransaction.id, payload)
+    } else {
+      await createTransaction(payload)
+    }
+
     closeForm()
     load()
   }
@@ -167,11 +201,11 @@ export default function Transactions() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Transações</h1>
+        <h1 className="text-xl font-semibold text-slate-900 dark:text-neutral-100">Transações</h1>
         <button
           type="button"
-          onClick={() => setShowForm(true)}
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-md dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
+          onClick={openCreateForm}
+          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-md dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
         >
           + Adicionar
         </button>
@@ -182,14 +216,14 @@ export default function Transactions() {
         placeholder="Buscar por descrição..."
         value={search}
         onChange={(event) => setSearch(event.target.value)}
-        className="w-full max-w-sm rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+        className="w-full max-w-sm rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
       />
 
-      <div className="rounded-xl bg-white p-5 shadow-sm dark:bg-slate-900">
+      <div className="rounded-xl bg-white p-5 shadow-sm dark:bg-neutral-900">
         {loading ? (
-          <p className="text-sm text-slate-500 dark:text-slate-400">Carregando...</p>
+          <p className="text-sm text-slate-500 dark:text-neutral-400">Carregando...</p>
         ) : (
-          <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+          <ul className="divide-y divide-slate-100 dark:divide-neutral-800">
             {transactions.map((transaction) => (
               <li key={transaction.id} className="flex items-center justify-between py-3 text-sm">
                 <div className="flex items-center gap-3">
@@ -198,7 +232,7 @@ export default function Transactions() {
                       <img
                         src={transaction.receipt_url}
                         alt="Comprovante"
-                        className="h-10 w-10 rounded object-cover ring-1 ring-slate-200 dark:ring-slate-700"
+                        className="h-10 w-10 rounded object-cover ring-1 ring-slate-200 dark:ring-neutral-700"
                       />
                     </button>
                   )}
@@ -211,11 +245,19 @@ export default function Transactions() {
                       🔁 recorrente
                     </span>
                   )}
-                  {transaction.account && (
-                    <span className="text-xs text-slate-400 dark:text-slate-500">{transaction.account.name}</span>
+                  {transaction.is_unusual_amount && (
+                    <span
+                      title="Valor bem acima do que é comum para essa categoria"
+                      className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-400"
+                    >
+                      ⚠️ fora do padrão
+                    </span>
                   )}
-                  <span className="text-slate-600 dark:text-slate-300">{transaction.description || '-'}</span>
-                  <span className="text-slate-400 dark:text-slate-500">{transaction.date}</span>
+                  {transaction.account && (
+                    <span className="text-xs text-slate-400 dark:text-neutral-500">{transaction.account.name}</span>
+                  )}
+                  <span className="text-slate-600 dark:text-neutral-300">{transaction.description || '-'}</span>
+                  <span className="text-slate-400 dark:text-neutral-500">{transaction.date}</span>
                 </div>
                 <div className="flex items-center gap-4">
                   <span
@@ -228,8 +270,14 @@ export default function Transactions() {
                     {transaction.category.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
                   </span>
                   <button
+                    onClick={() => openEditForm(transaction)}
+                    className="text-slate-400 hover:text-slate-700 dark:text-neutral-500 dark:hover:text-neutral-200"
+                  >
+                    Editar
+                  </button>
+                  <button
                     onClick={() => setDeletingId(transaction.id)}
-                    className="text-slate-400 hover:text-red-600 dark:text-slate-500 dark:hover:text-red-400"
+                    className="text-slate-400 hover:text-red-600 dark:text-neutral-500 dark:hover:text-red-400"
                   >
                     Remover
                   </button>
@@ -237,7 +285,7 @@ export default function Transactions() {
               </li>
             ))}
             {transactions.length === 0 && (
-              <p className="py-4 text-center text-sm text-slate-400 dark:text-slate-500">
+              <p className="py-4 text-center text-sm text-slate-400 dark:text-neutral-500">
                 {search ? 'Nenhuma transação encontrada.' : 'Nenhuma transação cadastrada.'}
               </p>
             )}
@@ -245,14 +293,14 @@ export default function Transactions() {
         )}
       </div>
 
-      <Modal open={showForm} onClose={closeForm} title="Nova transação">
+      <Modal open={showForm} onClose={closeForm} title={editingTransaction ? 'Editar transação' : 'Nova transação'}>
         <form onSubmit={handleSubmit} className="grid gap-3 sm:grid-cols-2">
           <div className="flex items-center gap-2 sm:col-span-2">
             <select
               required
               value={form.category_id}
               onChange={(event) => setForm({ ...form, category_id: event.target.value })}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
             >
               <option value="">Categoria</option>
               {categories.map((category) => (
@@ -278,7 +326,7 @@ export default function Transactions() {
           <select
             value={form.account_id}
             onChange={(event) => setForm({ ...form, account_id: event.target.value })}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
           >
             <option value="">Sem conta</option>
             {accounts.map((account) => (
@@ -296,7 +344,7 @@ export default function Transactions() {
             placeholder="Valor"
             value={form.amount}
             onChange={(event) => setForm({ ...form, amount: event.target.value })}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
           />
 
           <div className="sm:col-span-2">
@@ -305,7 +353,7 @@ export default function Transactions() {
               placeholder="Descrição"
               value={form.description}
               onChange={(event) => setForm({ ...form, description: event.target.value })}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
             />
             {descriptionSuggestion && (
               <button
@@ -323,7 +371,7 @@ export default function Transactions() {
             required
             value={form.date}
             onChange={(event) => setForm({ ...form, date: event.target.value })}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
           />
 
           {limitAlerts.length > 0 && (
@@ -347,15 +395,17 @@ export default function Transactions() {
           <ReceiptInput
             file={form.receipt}
             categories={categories}
+            existingUrl={removeExistingReceipt ? null : editingTransaction?.receipt_url ?? null}
+            onRemoveExisting={() => setRemoveExistingReceipt(true)}
             onFileChange={(receipt) => setForm((current) => ({ ...current, receipt }))}
             onExtracted={handleReceiptExtracted}
           />
 
           <button
             type="submit"
-            className="rounded-lg bg-slate-900 px-3 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-slate-800 hover:shadow-md sm:col-span-2 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
+            className="rounded-lg bg-slate-900 px-3 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-slate-800 hover:shadow-md sm:col-span-2 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
           >
-            Adicionar
+            {editingTransaction ? 'Salvar' : 'Adicionar'}
           </button>
         </form>
       </Modal>

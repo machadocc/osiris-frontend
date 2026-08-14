@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { extractReceiptData } from '../utils/receiptOcr.js'
 
-export default function ReceiptInput({ file, onFileChange, onExtracted, categories = [] }) {
+export default function ReceiptInput({
+  file,
+  onFileChange,
+  onExtracted,
+  categories = [],
+  existingUrl = null,
+  onRemoveExisting = () => {},
+}) {
   const inputRef = useRef(null)
   const [previewUrl, setPreviewUrl] = useState(null)
   const [status, setStatus] = useState('idle')
@@ -50,22 +57,51 @@ export default function ReceiptInput({ file, onFileChange, onExtracted, categori
 
   return (
     <div className="space-y-2 sm:col-span-2">
-      <label className="text-sm text-slate-600 dark:text-slate-400">Comprovante (opcional)</label>
+      <label className="text-sm text-slate-600 dark:text-neutral-400">Comprovante (opcional)</label>
 
-      {!file ? (
+      {!file && existingUrl && (
+        <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3 dark:border-neutral-800 dark:bg-neutral-800/40">
+          <img
+            src={existingUrl}
+            alt="Comprovante atual"
+            className="h-16 w-16 rounded-lg object-cover ring-1 ring-black/5 dark:ring-white/10"
+          />
+          <p className="flex-1 text-xs text-slate-500 dark:text-neutral-400">Comprovante já anexado.</p>
+          <div className="flex shrink-0 flex-col gap-1.5 text-xs">
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              className="rounded-lg border border-slate-300 px-3 py-1 font-medium text-slate-600 hover:bg-slate-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+            >
+              Trocar
+            </button>
+            <button
+              type="button"
+              onClick={onRemoveExisting}
+              className="font-medium text-slate-400 hover:text-red-600 dark:text-neutral-500 dark:hover:text-red-400"
+            >
+              Remover
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!file && !existingUrl && (
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="group flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-slate-300 px-4 py-4 text-center transition-colors hover:border-slate-400 hover:bg-slate-50 dark:border-slate-700 dark:hover:border-slate-600 dark:hover:bg-slate-800"
+          className="group flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-slate-300 px-4 py-4 text-center transition-colors hover:border-slate-400 hover:bg-slate-50 dark:border-neutral-700 dark:hover:border-neutral-600 dark:hover:bg-neutral-800"
         >
           <span className="text-xl">📷</span>
-          <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Anexar foto do cupom</span>
+          <span className="text-sm font-medium text-slate-600 dark:text-neutral-300">Anexar foto do cupom</span>
           <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">
             ✨ Preenchemos valor, data e categoria pra você
           </span>
         </button>
-      ) : (
-        <div className="flex flex-wrap items-start gap-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-800/40">
+      )}
+
+      {file && (
+        <div className="flex flex-wrap items-start gap-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3 dark:border-neutral-800 dark:bg-neutral-800/40">
           <img
             src={previewUrl}
             alt="Prévia do comprovante"
@@ -85,7 +121,7 @@ export default function ReceiptInput({ file, onFileChange, onExtracted, categori
                 <button
                   type="button"
                   onClick={() => setStatus('attached')}
-                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
                 >
                   Apenas anexar
                 </button>
@@ -94,10 +130,10 @@ export default function ReceiptInput({ file, onFileChange, onExtracted, categori
 
             {status === 'reading' && (
               <div className="space-y-1.5">
-                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                <p className="text-xs font-medium text-slate-500 dark:text-neutral-400">
                   Lendo comprovante... {progress}%
                 </p>
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-neutral-700">
                   <div
                     className="h-full rounded-full bg-indigo-600 transition-[width] duration-200 dark:bg-indigo-400"
                     style={{ width: `${progress}%` }}
@@ -127,7 +163,7 @@ export default function ReceiptInput({ file, onFileChange, onExtracted, categori
               </p>
             )}
             {status === 'attached' && (
-              <p className="inline-flex w-fit items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+              <p className="inline-flex w-fit items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-neutral-700 dark:text-neutral-300">
                 📎 Imagem anexada
               </p>
             )}
@@ -136,7 +172,7 @@ export default function ReceiptInput({ file, onFileChange, onExtracted, categori
           <button
             type="button"
             onClick={handleRemove}
-            className="text-xs font-medium text-slate-400 transition-colors hover:text-red-600 dark:text-slate-500 dark:hover:text-red-400"
+            className="text-xs font-medium text-slate-400 transition-colors hover:text-red-600 dark:text-neutral-500 dark:hover:text-red-400"
           >
             Remover
           </button>
