@@ -5,11 +5,17 @@ import { createTransaction, deleteTransaction, listTransactions, updateTransacti
 import { listSpendingLimits } from '../api/spendingLimits'
 import CategoryBadge from '../components/CategoryBadge.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
+import ImportStatementModal from '../components/ImportStatementModal.jsx'
 import Modal from '../components/Modal.jsx'
 import ReceiptInput from '../components/ReceiptInput.jsx'
 
 function formatCurrency(value) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
+function formatDate(dateStr) {
+  const [year, month, day] = dateStr.split('-')
+  return `${day}/${month}/${year}`
 }
 
 const emptyForm = {
@@ -29,6 +35,7 @@ export default function Transactions() {
   const [form, setForm] = useState(emptyForm)
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  const [showImportModal, setShowImportModal] = useState(false)
   const [viewingReceipt, setViewingReceipt] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
   const [editingTransaction, setEditingTransaction] = useState(null)
@@ -202,13 +209,22 @@ export default function Transactions() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold text-slate-900 dark:text-neutral-100">Transações</h1>
-        <button
-          type="button"
-          onClick={openCreateForm}
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-md dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
-        >
-          + Adicionar
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowImportModal(true)}
+            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
+          >
+            Importar extrato
+          </button>
+          <button
+            type="button"
+            onClick={openCreateForm}
+            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-md dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
+          >
+            + Adicionar
+          </button>
+        </div>
       </div>
 
       <input
@@ -225,8 +241,8 @@ export default function Transactions() {
         ) : (
           <ul className="divide-y divide-slate-100 dark:divide-neutral-800">
             {transactions.map((transaction) => (
-              <li key={transaction.id} className="flex items-center justify-between py-3 text-sm">
-                <div className="flex items-center gap-3">
+              <li key={transaction.id} className="flex flex-col gap-2 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap items-center gap-2">
                   {transaction.receipt_url && (
                     <button type="button" onClick={() => setViewingReceipt(transaction.receipt_url)}>
                       <img
@@ -257,9 +273,9 @@ export default function Transactions() {
                     <span className="text-xs text-slate-400 dark:text-neutral-500">{transaction.account.name}</span>
                   )}
                   <span className="text-slate-600 dark:text-neutral-300">{transaction.description || '-'}</span>
-                  <span className="text-slate-400 dark:text-neutral-500">{transaction.date}</span>
+                  <span className="text-slate-400 dark:text-neutral-500">{formatDate(transaction.date)}</span>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center justify-between gap-4 sm:justify-end">
                   <span
                     className={
                       transaction.category.type === 'income'
@@ -269,18 +285,20 @@ export default function Transactions() {
                   >
                     {transaction.category.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
                   </span>
-                  <button
-                    onClick={() => openEditForm(transaction)}
-                    className="text-slate-400 hover:text-slate-700 dark:text-neutral-500 dark:hover:text-neutral-200"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => setDeletingId(transaction.id)}
-                    className="text-slate-400 hover:text-red-600 dark:text-neutral-500 dark:hover:text-red-400"
-                  >
-                    Remover
-                  </button>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => openEditForm(transaction)}
+                      className="text-slate-400 hover:text-slate-700 dark:text-neutral-500 dark:hover:text-neutral-200"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => setDeletingId(transaction.id)}
+                      className="text-slate-400 hover:text-red-600 dark:text-neutral-500 dark:hover:text-red-400"
+                    >
+                      Remover
+                    </button>
+                  </div>
                 </div>
               </li>
             ))}
@@ -388,7 +406,7 @@ export default function Transactions() {
           {duplicateWarning && (
             <p className="rounded-lg bg-amber-50 p-3 text-xs text-amber-700 sm:col-span-2 dark:bg-amber-500/10 dark:text-amber-400">
               ⚠️ Já existe uma transação de {formatCurrency(duplicateWarning.amount)} em{' '}
-              {duplicateWarning.date} — confira se você não está lançando o mesmo cupom duas vezes.
+              {formatDate(duplicateWarning.date)} — confira se você não está lançando o mesmo cupom duas vezes.
             </p>
           )}
 
@@ -420,6 +438,15 @@ export default function Transactions() {
         message="Essa ação não pode ser desfeita."
         onConfirm={handleDelete}
         onCancel={() => setDeletingId(null)}
+      />
+
+      <ImportStatementModal
+        open={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        categories={categories}
+        onCategoriesCreated={(created) => setCategories((current) => [...current, ...created])}
+        accounts={accounts}
+        onImported={load}
       />
     </div>
   )

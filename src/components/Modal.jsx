@@ -1,6 +1,11 @@
 import { useEffect } from 'react'
 
-export default function Modal({ open, onClose, title, children }) {
+const MAX_WIDTHS = {
+  md: 'max-w-lg',
+  lg: 'max-w-3xl',
+}
+
+export default function Modal({ open, onClose, title, children, size = 'md' }) {
   useEffect(() => {
     if (!open) return
 
@@ -28,7 +33,7 @@ export default function Modal({ open, onClose, title, children }) {
         role="dialog"
         aria-modal="true"
         onClick={(event) => event.stopPropagation()}
-        className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 animate-[modal-panel-in_0.2s_ease-out] dark:bg-neutral-900 dark:ring-white/10"
+        className={`flex max-h-[85vh] w-full ${MAX_WIDTHS[size]} flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 animate-[modal-panel-in_0.2s_ease-out] dark:bg-neutral-900 dark:ring-white/10`}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-4 dark:border-neutral-800">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-neutral-100">{title}</h2>

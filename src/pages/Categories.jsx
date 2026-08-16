@@ -4,7 +4,7 @@ import CategoryBadge from '../components/CategoryBadge.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import Modal from '../components/Modal.jsx'
 
-const emptyForm = { name: '', type: 'expense', color: '#64748b' }
+const emptyForm = { name: '', type: 'expense', color: '#64748b', keywords: '' }
 
 export default function Categories() {
   const [categories, setCategories] = useState([])
@@ -33,7 +33,7 @@ export default function Categories() {
 
   function openEditForm(category) {
     setEditingCategory(category)
-    setForm({ name: category.name, type: category.type, color: category.color })
+    setForm({ name: category.name, type: category.type, color: category.color, keywords: category.keywords ?? '' })
     setShowForm(true)
   }
 
@@ -64,7 +64,7 @@ export default function Categories() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold text-slate-900 dark:text-neutral-100">Categorias</h1>
         <button
           type="button"
@@ -132,6 +132,19 @@ export default function Categories() {
             onChange={(event) => setForm({ ...form, color: event.target.value })}
             className="h-10 w-full rounded-lg border border-slate-300 dark:border-neutral-700"
           />
+
+          <div className="space-y-1">
+            <label className="text-xs text-slate-500 dark:text-neutral-400">
+              Palavras-chave (opcional) — usadas para categorizar automaticamente ao importar um extrato
+            </label>
+            <input
+              type="text"
+              placeholder="ex: ifood, restaurante, mercado"
+              value={form.keywords}
+              onChange={(event) => setForm({ ...form, keywords: event.target.value })}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+            />
+          </div>
 
           <button
             type="submit"

@@ -1,9 +1,9 @@
 import { createWorker } from 'tesseract.js'
 
-const CURRENCY_REGEX = /r?\$?\s?(\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2})/gi
-const DATE_REGEX = /\b(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})\b/
+export const CURRENCY_REGEX = /r?\$?\s?(\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2})/gi
+export const DATE_REGEX = /\b(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})\b/
 
-function parseCurrency(raw) {
+export function parseCurrency(raw) {
   const normalized = raw.replace(/\./g, '').replace(',', '.')
   const value = Number.parseFloat(normalized)
   return Number.isFinite(value) ? value : null
@@ -51,7 +51,7 @@ const DIACRITICS_RANGE_START = String.fromCharCode(0x0300)
 const DIACRITICS_RANGE_END = String.fromCharCode(0x036f)
 const DIACRITICS_REGEX = new RegExp(`[${DIACRITICS_RANGE_START}-${DIACRITICS_RANGE_END}]`, 'g')
 
-function normalize(value) {
+export function normalize(value) {
   return value.normalize('NFD').replace(DIACRITICS_REGEX, '').toLowerCase()
 }
 

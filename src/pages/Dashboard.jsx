@@ -160,7 +160,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold text-slate-900 dark:text-neutral-100">Painel financeiro</h1>
 
         <div className="flex items-center gap-3">
@@ -403,8 +403,8 @@ export default function Dashboard() {
           </div>
           <ul className="divide-y divide-slate-100 dark:divide-neutral-800">
             {summary.recent_transactions.map((transaction) => (
-              <li key={transaction.id} className="flex items-center justify-between py-2 text-sm">
-                <div className="flex items-center gap-2">
+              <li key={transaction.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2 text-sm">
+                <div className="flex flex-wrap items-center gap-2">
                   <CategoryBadge category={transaction.category} />
                   {transaction.account && (
                     <span className="text-xs text-slate-400 dark:text-neutral-500">{transaction.account.name}</span>
@@ -412,11 +412,11 @@ export default function Dashboard() {
                   <span className="text-slate-600 dark:text-neutral-300">{transaction.description || '-'}</span>
                 </div>
                 <span
-                  className={
+                  className={`shrink-0 ${
                     transaction.category.type === 'income'
                       ? 'text-emerald-600 dark:text-emerald-400'
                       : 'text-red-600 dark:text-red-400'
-                  }
+                  }`}
                 >
                   {transaction.category.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
                 </span>
