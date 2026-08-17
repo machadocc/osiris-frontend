@@ -9,8 +9,18 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
+      injectManifest: {
+        // client.js (Axios, ~30KB) fica logo abaixo do limite padrão do
+        // Workbox ao ser somado ao resto do bundle principal — sem isso o
+        // build falha com "file bigger than maximumFileSizeToCacheInBytes".
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+      },
       devOptions: {
         enabled: true,
+        type: 'module',
       },
       manifest: {
         name: 'Osiris',

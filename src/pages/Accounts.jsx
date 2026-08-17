@@ -164,7 +164,7 @@ export default function Accounts() {
       <ConfirmDialog
         open={deletingId !== null}
         title="Remover conta"
-        message="As transações associadas a essa conta não serão apagadas — apenas ficarão sem conta vinculada."
+        message="Isso também remove todas as transações e lançamentos recorrentes associados a essa conta. Essa ação não pode ser desfeita."
         onConfirm={handleDelete}
         onCancel={() => setDeletingId(null)}
       />

@@ -117,7 +117,7 @@ export default function ImportStatementModal({ open, onClose, categories, onCate
       // eslint-disable-next-line no-await-in-loop
       await createTransaction({
         category_id: row.categoryId,
-        account_id: accountId || null,
+        account_id: accountId,
         amount: row.amount,
         description: row.description,
         date: row.date,
@@ -175,11 +175,12 @@ export default function ImportStatementModal({ open, onClose, categories, onCate
               {rows.length} lançamento(s) encontrado(s). Confira categoria e valores antes de importar.
             </p>
             <select
+              required
               value={accountId}
               onChange={(event) => setAccountId(event.target.value)}
               className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
             >
-              <option value="">Sem conta</option>
+              <option value="">Selecione a conta</option>
               {accounts.map((account) => (
                 <option key={account.id} value={account.id}>
                   {account.name}
@@ -247,10 +248,10 @@ export default function ImportStatementModal({ open, onClose, categories, onCate
           <button
             type="button"
             onClick={handleImport}
-            disabled={includedCount === 0}
+            disabled={includedCount === 0 || !accountId}
             className="w-full rounded-lg bg-slate-900 px-3 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-slate-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
           >
-            Importar {includedCount} transação(ões)
+            {accountId ? `Importar ${includedCount} transação(ões)` : 'Selecione uma conta pra importar'}
           </button>
         </div>
       )}

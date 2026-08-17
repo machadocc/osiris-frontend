@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { listAccounts } from '../api/accounts'
 import {
   createSavingsGoal,
   deleteSavingsGoal,
@@ -29,6 +30,7 @@ const emptyContribution = { amount: '' }
 
 export default function SavingsGoals() {
   const [goals, setGoals] = useState([])
+  const [accounts, setAccounts] = useState([])
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState(emptyForm)
   const [showForm, setShowForm] = useState(false)
@@ -48,10 +50,18 @@ export default function SavingsGoals() {
   const overallPercentage =
     totalTarget > 0 ? Math.min(Math.round((totalCurrent / totalTarget) * 1000) / 10, 100) : 0
 
+  const totalAccountsBalance = useMemo(() => accounts.reduce((sum, account) => sum + account.balance, 0), [accounts])
+  const freeBalance = totalAccountsBalance - totalCurrent
+  const percentageOfBalanceInGoals =
+    totalAccountsBalance > 0 ? Math.min(Math.round((totalCurrent / totalAccountsBalance) * 1000) / 10, 100) : 0
+
   function load() {
     setLoading(true)
-    listSavingsGoals()
-      .then(setGoals)
+    Promise.all([listSavingsGoals(), listAccounts()])
+      .then(([goalsData, accountsData]) => {
+        setGoals(goalsData)
+        setAccounts(accountsData)
+      })
       .finally(() => setLoading(false))
   }
 
@@ -158,6 +168,23 @@ export default function SavingsGoals() {
           <p className="mt-1 text-xs text-slate-400 dark:text-neutral-500">
             {overallPercentage}% da soma de todas as metas · {goals.length} meta(s)
           </p>
+
+          {accounts.length > 0 && (
+            <div className="mt-4 rounded-lg bg-slate-50 p-3 dark:bg-neutral-800">
+              {totalAccountsBalance > 0 && (
+                <p className="text-xs text-slate-500 dark:text-neutral-400">
+                  Isso é <span className="font-medium text-indigo-600 dark:text-indigo-400">{percentageOfBalanceInGoals}%</span> do
+                  seu saldo total em contas ({formatCurrency(totalAccountsBalance)}).
+                </p>
+              )}
+              <p className={`text-xs text-slate-500 dark:text-neutral-400 ${totalAccountsBalance > 0 ? 'mt-1' : ''}`}>
+                <span className={`font-medium ${freeBalance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                  {formatCurrency(freeBalance)}
+                </span>{' '}
+                {freeBalance >= 0 ? 'continua livre, fora das metas.' : 'a mais do que o saldo em contas cobre — o valor guardado nas metas ultrapassa o que você tem disponível.'}
+              </p>
+            </div>
+          )}
         </div>
       )}
 

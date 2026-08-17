@@ -9,6 +9,7 @@ const links = [
   { to: '/accounts', label: 'Contas' },
   { to: '/spending-limits', label: 'Limites de gastos' },
   { to: '/savings-goals', label: 'Metas de economia' },
+  { to: '/recurring-transactions', label: 'Lançamentos recorrentes' },
 ]
 
 export default function Sidebar({ open, onClose }) {

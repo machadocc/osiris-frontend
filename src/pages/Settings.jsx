@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import NotificationsCard from '../components/NotificationsCard.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
 
@@ -94,6 +95,8 @@ export default function Settings() {
           </button>
         </div>
       </div>
+
+      <NotificationsCard />
 
       <form
         onSubmit={handleProfileSubmit}

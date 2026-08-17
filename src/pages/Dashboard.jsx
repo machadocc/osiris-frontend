@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getDashboardSummary } from '../api/dashboard'
+import { downloadMonthlyReport } from '../api/reports'
 import CategoryBadge from '../components/CategoryBadge.jsx'
+import HealthScoreCard from '../components/HealthScoreCard.jsx'
 import OnboardingChecklist from '../components/OnboardingChecklist.jsx'
 
 function currentMonth() {
@@ -140,6 +142,16 @@ export default function Dashboard() {
   const [month, setMonth] = useState(currentMonth())
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [exportingReport, setExportingReport] = useState(false)
+
+  async function handleExportReport() {
+    setExportingReport(true)
+    try {
+      await downloadMonthlyReport(month)
+    } finally {
+      setExportingReport(false)
+    }
+  }
 
   useEffect(() => {
     setLoading(true)
@@ -165,6 +177,13 @@ export default function Dashboard() {
         <h1 className="text-xl font-semibold text-slate-900 dark:text-neutral-100">Painel financeiro</h1>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleExportReport}
+            disabled={exportingReport}
+            className="flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          >
+            {exportingReport ? 'Gerando...' : '📄 Exportar PDF'}
+          </button>
           <button
             onClick={() => setMonth(shiftMonth(month, -1))}
             className="rounded-lg border border-slate-300 px-2 py-1 text-sm text-slate-500 hover:bg-slate-100 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"
@@ -232,17 +251,42 @@ export default function Dashboard() {
           >
             {formatCurrency(totalAccountsBalance)}
           </p>
-          <p className="mt-1 text-xs text-slate-400 dark:text-neutral-500">
-            {totalSavedInGoals > 0
-              ? `${formatCurrency(totalAccountsBalance - totalSavedInGoals)} livre · ${formatCurrency(totalSavedInGoals)} em metas`
-              : 'Total acumulado, não só do mês'}
-          </p>
+          {totalSavedInGoals > 0 ? (
+            <>
+              <div className="mt-2 flex h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-neutral-800">
+                <div
+                  className="h-full bg-emerald-500"
+                  style={{ width: `${Math.max(100 - (totalSavedInGoals / Math.max(totalAccountsBalance, totalSavedInGoals)) * 100, 0)}%` }}
+                />
+                <div
+                  className="h-full bg-indigo-500"
+                  style={{ width: `${Math.min((totalSavedInGoals / Math.max(totalAccountsBalance, totalSavedInGoals)) * 100, 100)}%` }}
+                />
+              </div>
+              <div className="mt-1.5 flex items-center justify-between gap-2 text-xs">
+                <span className="flex items-center gap-1.5 text-slate-600 dark:text-neutral-300">
+                  <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
+                  {formatCurrency(totalAccountsBalance - totalSavedInGoals)} livre
+                </span>
+                <span className="flex items-center gap-1.5 text-slate-600 dark:text-neutral-300">
+                  <span className="h-2 w-2 shrink-0 rounded-full bg-indigo-500" />
+                  {formatCurrency(totalSavedInGoals)} em metas
+                </span>
+              </div>
+            </>
+          ) : (
+            <p className="mt-1 text-xs text-slate-400 dark:text-neutral-500">Total acumulado, não só do mês</p>
+          )}
         </div>
       </div>
 
-      <div className="rounded-xl bg-white p-5 shadow-sm dark:bg-neutral-900">
-        <h2 className="mb-4 text-sm font-medium text-slate-700 dark:text-neutral-300">Evolução do saldo (6 meses + projeção)</h2>
-        <BalanceHistoryChart history={summary.balance_history} forecast={summary.balance_forecast} />
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="rounded-xl bg-white p-5 shadow-sm dark:bg-neutral-900">
+          <h2 className="mb-4 text-sm font-medium text-slate-700 dark:text-neutral-300">Evolução do saldo (6 meses + projeção)</h2>
+          <BalanceHistoryChart history={summary.balance_history} forecast={summary.balance_forecast} />
+        </div>
+
+        <HealthScoreCard healthScore={summary.health_score} />
       </div>
 
       <div className="rounded-xl bg-white p-5 shadow-sm dark:bg-neutral-900">

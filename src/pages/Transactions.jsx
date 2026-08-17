@@ -350,11 +350,12 @@ export default function Transactions() {
           </div>
 
           <select
+            required
             value={form.account_id}
             onChange={(event) => setForm({ ...form, account_id: event.target.value })}
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
           >
-            <option value="">Sem conta</option>
+            <option value="">Conta</option>
             {accounts.map((account) => (
               <option key={account.id} value={account.id}>
                 {account.name}
