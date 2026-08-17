@@ -4,6 +4,7 @@ import { listCategories } from '../api/categories'
 import { createTransaction, deleteTransaction, listTransactions, updateTransaction } from '../api/transactions'
 import { listSpendingLimits } from '../api/spendingLimits'
 import CategoryBadge from '../components/CategoryBadge.jsx'
+import CategoryOptionGroups from '../components/CategoryOptionGroups.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import ImportStatementModal from '../components/ImportStatementModal.jsx'
 import Modal from '../components/Modal.jsx'
@@ -383,11 +384,7 @@ export default function Transactions() {
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
           >
             <option value="">Categoria</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
+            <CategoryOptionGroups categories={categories} />
           </select>
           <select
             required
@@ -523,11 +520,7 @@ export default function Transactions() {
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
               >
                 <option value="">Categoria</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
+                <CategoryOptionGroups categories={categories} />
               </select>
 
               {selectedCategory && (
@@ -558,39 +551,37 @@ export default function Transactions() {
                   : categories
 
                 return (
-                  <div key={index} className="flex items-center gap-2">
+                  <div key={index} className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <select
                       required
                       value={row.category_id}
                       onChange={(event) => updateSplitRow(index, 'category_id', event.target.value)}
-                      className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 sm:flex-1 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
                     >
                       <option value="">Categoria</option>
-                      {rowOptions.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
+                      <CategoryOptionGroups categories={rowOptions} />
                     </select>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0.01"
-                      required
-                      placeholder="Valor"
-                      value={row.amount}
-                      onChange={(event) => updateSplitRow(index, 'amount', event.target.value)}
-                      className="w-28 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-                    />
-                    {splitRows.length > 2 && (
-                      <button
-                        type="button"
-                        onClick={() => removeSplitRow(index)}
-                        className="text-slate-400 hover:text-red-600 dark:text-neutral-500 dark:hover:text-red-400"
-                      >
-                        ✕
-                      </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        required
+                        placeholder="Valor"
+                        value={row.amount}
+                        onChange={(event) => updateSplitRow(index, 'amount', event.target.value)}
+                        className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 sm:w-28 sm:flex-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                      />
+                      {splitRows.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => removeSplitRow(index)}
+                          className="shrink-0 text-slate-400 hover:text-red-600 dark:text-neutral-500 dark:hover:text-red-400"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )
               })}

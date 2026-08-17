@@ -7,6 +7,7 @@ import {
   listRecurringTransactions,
   updateRecurringTransaction,
 } from '../api/recurringTransactions'
+import CategoryOptionGroups from '../components/CategoryOptionGroups.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import Modal from '../components/Modal.jsx'
 import Spinner from '../components/Spinner.jsx'
@@ -195,11 +196,7 @@ export default function RecurringTransactions() {
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
           >
             <option value="">Categoria</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
+            <CategoryOptionGroups categories={categories} />
           </select>
 
           <select

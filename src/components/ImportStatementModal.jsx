@@ -1,19 +1,13 @@
 import { useState } from 'react'
 import { createCategory, listCategories } from '../api/categories'
 import { createTransaction } from '../api/transactions'
+import CategoryOptionGroups from './CategoryOptionGroups.jsx'
 import Modal from './Modal.jsx'
 
 const FALLBACK_COLORS = { income: '#10b981', expense: '#ef4444' }
 
 function formatCurrency(value) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
-
-function categoryLabel(category, categories) {
-  const hasDuplicateName = categories.filter((other) => other.name === category.name).length > 1
-  if (!hasDuplicateName) return category.name
-
-  return `${category.name} (${category.type === 'income' ? 'Receita' : 'Despesa'})`
 }
 
 /**
@@ -232,11 +226,7 @@ export default function ImportStatementModal({ open, onClose, categories, onCate
                         className="w-full min-w-[140px] rounded border border-slate-200 bg-white px-2 py-1 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
                       >
                         <option value="">Selecione</option>
-                        {categories.map((category) => (
-                          <option key={category.id} value={category.id}>
-                            {categoryLabel(category, categories)}
-                          </option>
-                        ))}
+                        <CategoryOptionGroups categories={categories} />
                       </select>
                     </td>
                   </tr>
