@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import Logo from './Logo.jsx'
 
@@ -30,7 +30,9 @@ export default function Sidebar({ open, onClose }) {
       >
         <div>
           <div className="mb-6 flex items-center justify-between px-2">
-            <Logo size="sm" />
+            <Link to="/" onClick={onClose}>
+              <Logo size="sm" />
+            </Link>
             <button
               type="button"
               onClick={onClose}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getDashboardSummary } from '../api/dashboard'
 import CategoryBadge from '../components/CategoryBadge.jsx'
+import OnboardingChecklist from '../components/OnboardingChecklist.jsx'
 
 function currentMonth() {
   return new Date().toISOString().slice(0, 7)
@@ -181,6 +182,11 @@ export default function Dashboard() {
           </button>
         </div>
       </div>
+
+      <OnboardingChecklist
+        accountsCount={summary.accounts.length}
+        transactionsCount={summary.recent_transactions.length}
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl bg-white p-5 shadow-sm dark:bg-neutral-900">

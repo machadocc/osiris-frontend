@@ -1,7 +1,9 @@
 import { useState } from 'react'
-import { createCategory } from '../api/categories'
+import { createCategory, listCategories } from '../api/categories'
 import { createTransaction } from '../api/transactions'
 import Modal from './Modal.jsx'
+
+const FALLBACK_COLORS = { income: '#10b981', expense: '#ef4444' }
 
 function formatCurrency(value) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -14,17 +16,29 @@ function categoryLabel(category, categories) {
   return `${category.name} (${category.type === 'income' ? 'Receita' : 'Despesa'})`
 }
 
-async function ensureFallbackCategories(categories, onCategoriesCreated) {
-  const hasIncomeFallback = categories.some((category) => category.name === 'Outros' && category.type === 'income')
-  const hasExpenseFallback = categories.some((category) => category.name === 'Outros' && category.type === 'expense')
+/**
+ * Busca a lista de categorias direto da API (não usa a prop `categories` do
+ * componente, que pode estar desatualizada se o usuário abrir o import antes
+ * dela terminar de carregar) — evita criar "Outros" duplicado quando já
+ * existe, só porque o estado local ainda não tinha sido preenchido.
+ */
+async function ensureFallbackCategories(onCategoriesCreated) {
+  const freshCategories = await listCategories()
+
+  const hasIncomeFallback = freshCategories.some((category) => category.name === 'Outros' && category.type === 'income')
+  const hasExpenseFallback = freshCategories.some((category) => category.name === 'Outros' && category.type === 'expense')
 
   const created = []
-  if (!hasIncomeFallback) created.push(await createCategory({ name: 'Outros', type: 'income' }))
-  if (!hasExpenseFallback) created.push(await createCategory({ name: 'Outros', type: 'expense' }))
+  if (!hasIncomeFallback) {
+    created.push(await createCategory({ name: 'Outros', type: 'income', color: FALLBACK_COLORS.income }))
+  }
+  if (!hasExpenseFallback) {
+    created.push(await createCategory({ name: 'Outros', type: 'expense', color: FALLBACK_COLORS.expense }))
+  }
 
   if (created.length > 0) onCategoriesCreated(created)
 
-  return [...categories, ...created]
+  return [...freshCategories, ...created]
 }
 
 export default function ImportStatementModal({ open, onClose, categories, onCategoriesCreated, accounts, onImported }) {
@@ -57,7 +71,7 @@ export default function ImportStatementModal({ open, onClose, categories, onCate
         return
       }
 
-      const availableCategories = await ensureFallbackCategories(categories, onCategoriesCreated)
+      const availableCategories = await ensureFallbackCategories(onCategoriesCreated)
 
       const draftRows = parsedLines.map((line, index) => {
         const matched = matchCategoryByKeywords(line.description, availableCategories)
