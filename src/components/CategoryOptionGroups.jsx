@@ -1,8 +1,6 @@
 import { groupCategoriesByType } from '../utils/categoryGroups.js'
 
-// <optgroup> "Despesa"/"Receita" pra sempre deixar explícito o tipo de cada
-// categoria no select, sem precisar escolher pra descobrir. Usar como filhos
-// diretos de um <select> (junto com a <option value=""> de placeholder).
+// Usar como filhos diretos de um <select>, junto com a <option value=""> de placeholder.
 export default function CategoryOptionGroups({ categories }) {
   const { income, expense } = groupCategoriesByType(categories)
 

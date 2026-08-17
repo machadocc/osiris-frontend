@@ -5,6 +5,7 @@ import { createTransaction, deleteTransaction, listTransactions, updateTransacti
 import { listSpendingLimits } from '../api/spendingLimits'
 import CategoryBadge from '../components/CategoryBadge.jsx'
 import CategoryOptionGroups from '../components/CategoryOptionGroups.jsx'
+import CategoryTypeTag from '../components/CategoryTypeTag.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import ImportStatementModal from '../components/ImportStatementModal.jsx'
 import Modal from '../components/Modal.jsx'
@@ -91,7 +92,6 @@ export default function Transactions() {
     [categories, form.category_id],
   )
 
-  // Feature 1: warn when this transaction would push a spending limit past 80%.
   const limitAlerts = useMemo(() => {
     const amount = Number(form.amount)
     if (splitMode || !form.category_id || !amount || !selectedCategory || selectedCategory.type !== 'expense') return []
@@ -109,7 +109,6 @@ export default function Transactions() {
       .filter((limit) => limit.percentage >= 80)
   }, [form.category_id, form.amount, form.date, selectedCategory, spendingLimits, splitMode])
 
-  // Feature 6: suggest a category from past transactions with a similar description.
   useEffect(() => {
     if (form.category_id || form.description.trim().length < 3) {
       setDescriptionSuggestion(null)
@@ -128,7 +127,6 @@ export default function Transactions() {
     return () => clearTimeout(timeout)
   }, [form.description, form.category_id])
 
-  // Feature 5: warn when the OCR-read amount/date match an existing transaction.
   async function checkDuplicate(amount, date) {
     if (!amount || !date) {
       setDuplicateWarning(null)
@@ -207,7 +205,6 @@ export default function Transactions() {
     setDescriptionSuggestion(null)
   }
 
-  // RF-TRX-13: soma dos splits precisa bater com o valor total antes de poder salvar.
   const splitTotal = useMemo(
     () => splitRows.reduce((sum, row) => sum + (Number(row.amount) || 0), 0),
     [splitRows],
@@ -270,7 +267,6 @@ export default function Transactions() {
     load()
   }
 
-  // RF-TRX-12: adição rápida por texto livre ("50 mercado hoje").
   function handleQuickAddParse(event) {
     event.preventDefault()
     if (!quickAddText.trim()) return
@@ -377,22 +373,25 @@ export default function Transactions() {
             onChange={(event) => setQuickAddParsed({ ...quickAddParsed, description: event.target.value })}
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
           />
-          <select
-            required
-            value={quickAddParsed.category_id}
-            onChange={(event) => setQuickAddParsed({ ...quickAddParsed, category_id: event.target.value })}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-          >
-            <option value="">Categoria</option>
-            <CategoryOptionGroups categories={categories} />
-          </select>
+          <div className="flex items-center gap-2">
+            <select
+              required
+              value={quickAddParsed.category_id}
+              onChange={(event) => setQuickAddParsed({ ...quickAddParsed, category_id: event.target.value })}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+            >
+              <option value="" disabled className="text-slate-400 dark:text-neutral-500">Selecione a categoria</option>
+              <CategoryOptionGroups categories={categories} />
+            </select>
+            <CategoryTypeTag type={categories.find((category) => String(category.id) === String(quickAddParsed.category_id))?.type} />
+          </div>
           <select
             required
             value={quickAddParsed.account_id}
             onChange={(event) => setQuickAddParsed({ ...quickAddParsed, account_id: event.target.value })}
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
           >
-            <option value="">Conta</option>
+            <option value="" disabled className="text-slate-400 dark:text-neutral-500">Selecione a conta</option>
             {accounts.map((account) => (
               <option key={account.id} value={account.id}>
                 {account.name}
@@ -519,21 +518,11 @@ export default function Transactions() {
                 onChange={(event) => setForm({ ...form, category_id: event.target.value })}
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
               >
-                <option value="">Categoria</option>
+                <option value="" disabled className="text-slate-400 dark:text-neutral-500">Selecione a categoria</option>
                 <CategoryOptionGroups categories={categories} />
               </select>
 
-              {selectedCategory && (
-                <span
-                  className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${
-                    selectedCategory.type === 'income'
-                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'
-                      : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
-                  }`}
-                >
-                  {selectedCategory.type === 'income' ? 'Receita' : 'Despesa'}
-                </span>
-              )}
+              <CategoryTypeTag type={selectedCategory?.type} />
 
               <button
                 type="button"
@@ -552,15 +541,18 @@ export default function Transactions() {
 
                 return (
                   <div key={index} className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <select
-                      required
-                      value={row.category_id}
-                      onChange={(event) => updateSplitRow(index, 'category_id', event.target.value)}
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 sm:flex-1 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-                    >
-                      <option value="">Categoria</option>
-                      <CategoryOptionGroups categories={rowOptions} />
-                    </select>
+                    <div className="flex flex-1 items-center gap-2">
+                      <select
+                        required
+                        value={row.category_id}
+                        onChange={(event) => updateSplitRow(index, 'category_id', event.target.value)}
+                        className="w-full flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                      >
+                        <option value="" disabled className="text-slate-400 dark:text-neutral-500">Selecione a categoria</option>
+                        <CategoryOptionGroups categories={rowOptions} />
+                      </select>
+                      <CategoryTypeTag type={categories.find((category) => String(category.id) === String(row.category_id))?.type} />
+                    </div>
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
@@ -614,7 +606,7 @@ export default function Transactions() {
             onChange={(event) => setForm({ ...form, account_id: event.target.value })}
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
           >
-            <option value="">Conta</option>
+            <option value="" disabled className="text-slate-400 dark:text-neutral-500">Selecione a conta</option>
             {accounts.map((account) => (
               <option key={account.id} value={account.id}>
                 {account.name}

@@ -7,6 +7,7 @@ import {
   updateSpendingLimit,
 } from '../api/spendingLimits'
 import CategoryOptionGroups from '../components/CategoryOptionGroups.jsx'
+import CategoryTypeTag from '../components/CategoryTypeTag.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import Modal from '../components/Modal.jsx'
 import Spinner from '../components/Spinner.jsx'
@@ -178,14 +179,17 @@ export default function SpendingLimits() {
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
           />
 
-          <select
-            value={form.category_id}
-            onChange={(event) => setForm({ ...form, category_id: event.target.value })}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-          >
-            <option value="">Todas as categorias</option>
-            <CategoryOptionGroups categories={categories} />
-          </select>
+          <div className="flex items-center gap-2">
+            <select
+              value={form.category_id}
+              onChange={(event) => setForm({ ...form, category_id: event.target.value })}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+            >
+              <option value="">Todas as categorias</option>
+              <CategoryOptionGroups categories={categories} />
+            </select>
+            <CategoryTypeTag type={categories.find((category) => String(category.id) === String(form.category_id))?.type} />
+          </div>
 
           <input
             type="number"

@@ -43,8 +43,8 @@ function extractAmount(text) {
   }
 }
 
-// Heurística de melhor esforço (RF-TRX-12): extrai data primeiro (senão "17/08" seria
-// confundido com um valor pelo extractAmount), depois valor, sobra vira a descrição.
+// Extrai data primeiro (senão "17/08" seria confundido com um valor pelo
+// extractAmount), depois valor — o que sobra vira a descrição.
 export function parseQuickAdd(text) {
   const { date, rest: afterDate } = extractDate(text)
   const { amount, rest: afterAmount } = extractAmount(afterDate)

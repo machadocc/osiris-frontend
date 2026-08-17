@@ -8,6 +8,7 @@ import {
   updateRecurringTransaction,
 } from '../api/recurringTransactions'
 import CategoryOptionGroups from '../components/CategoryOptionGroups.jsx'
+import CategoryTypeTag from '../components/CategoryTypeTag.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import Modal from '../components/Modal.jsx'
 import Spinner from '../components/Spinner.jsx'
@@ -189,15 +190,18 @@ export default function RecurringTransactions() {
 
       <Modal open={showForm} onClose={closeForm} title={editingItem ? 'Editar recorrência' : 'Nova recorrência'}>
         <form onSubmit={handleSubmit} className="grid gap-3">
-          <select
-            required
-            value={form.category_id}
-            onChange={(event) => setForm({ ...form, category_id: event.target.value })}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-          >
-            <option value="">Categoria</option>
-            <CategoryOptionGroups categories={categories} />
-          </select>
+          <div className="flex items-center gap-2">
+            <select
+              required
+              value={form.category_id}
+              onChange={(event) => setForm({ ...form, category_id: event.target.value })}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+            >
+              <option value="" disabled className="text-slate-400 dark:text-neutral-500">Selecione a categoria</option>
+              <CategoryOptionGroups categories={categories} />
+            </select>
+            <CategoryTypeTag type={categories.find((category) => String(category.id) === String(form.category_id))?.type} />
+          </div>
 
           <select
             required
@@ -205,7 +209,7 @@ export default function RecurringTransactions() {
             onChange={(event) => setForm({ ...form, account_id: event.target.value })}
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
           >
-            <option value="">Conta</option>
+            <option value="" disabled className="text-slate-400 dark:text-neutral-500">Selecione a conta</option>
             {accounts.map((account) => (
               <option key={account.id} value={account.id}>
                 {account.name}

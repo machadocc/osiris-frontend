@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { createCategory, listCategories } from '../api/categories'
 import { createTransaction } from '../api/transactions'
 import CategoryOptionGroups from './CategoryOptionGroups.jsx'
+import CategoryTypeTag from './CategoryTypeTag.jsx'
 import Modal from './Modal.jsx'
 
 const FALLBACK_COLORS = { income: '#10b981', expense: '#ef4444' }
@@ -174,7 +175,7 @@ export default function ImportStatementModal({ open, onClose, categories, onCate
               onChange={(event) => setAccountId(event.target.value)}
               className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
             >
-              <option value="">Selecione a conta</option>
+              <option value="" disabled className="text-slate-400 dark:text-neutral-500">Selecione a conta</option>
               {accounts.map((account) => (
                 <option key={account.id} value={account.id}>
                   {account.name}
@@ -220,14 +221,17 @@ export default function ImportStatementModal({ open, onClose, categories, onCate
                       {formatCurrency(row.amount)}
                     </td>
                     <td className="px-3 py-2">
-                      <select
-                        value={row.categoryId}
-                        onChange={(event) => updateRow(row.id, { categoryId: event.target.value })}
-                        className="w-full min-w-[140px] rounded border border-slate-200 bg-white px-2 py-1 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-                      >
-                        <option value="">Selecione</option>
-                        <CategoryOptionGroups categories={categories} />
-                      </select>
+                      <div className="flex items-center gap-1.5">
+                        <select
+                          value={row.categoryId}
+                          onChange={(event) => updateRow(row.id, { categoryId: event.target.value })}
+                          className="w-full min-w-[140px] rounded border border-slate-200 bg-white px-2 py-1 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                        >
+                          <option value="" disabled className="text-slate-400 dark:text-neutral-500">Selecione a categoria</option>
+                          <CategoryOptionGroups categories={categories} />
+                        </select>
+                        <CategoryTypeTag type={categories.find((category) => String(category.id) === String(row.categoryId))?.type} />
+                      </div>
                     </td>
                   </tr>
                 ))}
