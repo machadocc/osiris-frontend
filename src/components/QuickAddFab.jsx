@@ -7,6 +7,22 @@ import CategoryOptionGroups from './CategoryOptionGroups.jsx'
 import CategoryTypeTag from './CategoryTypeTag.jsx'
 import Spinner from './Spinner.jsx'
 
+function PlusIcon({ className }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" className={className} aria-hidden="true">
+      <path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function CloseIcon({ className }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" className={className} aria-hidden="true">
+      <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 export default function QuickAddFab() {
   const [open, setOpen] = useState(false)
   const [categories, setCategories] = useState([])
@@ -72,20 +88,20 @@ export default function QuickAddFab() {
       {open && (
         <div
           role="dialog"
-          aria-label="Adicionar transação rápida"
+          aria-label="Nova transação rápida"
           className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-2xl bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl sm:inset-x-auto sm:bottom-40 sm:right-4 sm:w-96 sm:rounded-2xl sm:pb-4 dark:bg-neutral-900"
         >
           <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-slate-200 sm:hidden dark:bg-neutral-700" />
 
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-900 dark:text-neutral-100">Adicionar rápido</h2>
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-neutral-100">Nova transação rápida</h2>
             <button
               type="button"
               onClick={handleClose}
               aria-label="Fechar"
-              className="text-slate-400 hover:text-slate-700 dark:text-neutral-500 dark:hover:text-neutral-200"
+              className="flex h-6 w-6 items-center justify-center rounded text-slate-400 hover:text-slate-700 dark:text-neutral-500 dark:hover:text-neutral-200"
             >
-              ✕
+              <CloseIcon className="h-4 w-4" />
             </button>
           </div>
 
@@ -191,10 +207,11 @@ export default function QuickAddFab() {
       <button
         type="button"
         onClick={() => (open ? handleClose() : setOpen(true))}
-        aria-label={open ? 'Fechar adicionar rápido' : 'Adicionar transação rápida'}
-        className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-2xl leading-none text-white shadow-lg transition-transform hover:scale-105 hover:bg-slate-800 active:scale-95 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
+        aria-label={open ? 'Fechar adicionar transação rápida' : 'Adicionar transação rápida'}
+        title="Adicionar transação rápida"
+        className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg transition-transform hover:scale-105 hover:bg-slate-800 active:scale-95 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
       >
-        {open ? '✕' : '+'}
+        <PlusIcon className={`h-6 w-6 transition-transform duration-200 ${open ? 'rotate-45' : ''}`} />
       </button>
     </>
   )
