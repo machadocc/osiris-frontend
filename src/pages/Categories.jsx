@@ -3,6 +3,7 @@ import { createCategory, deleteCategory, listCategories, updateCategory } from '
 import CategoryBadge from '../components/CategoryBadge.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import Modal from '../components/Modal.jsx'
+import Spinner from '../components/Spinner.jsx'
 
 const emptyForm = { name: '', type: 'expense', color: '#64748b', keywords: '' }
 
@@ -13,6 +14,7 @@ export default function Categories() {
   const [showForm, setShowForm] = useState(false)
   const [editingCategory, setEditingCategory] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     load()
@@ -45,15 +47,21 @@ export default function Categories() {
 
   async function handleSubmit(event) {
     event.preventDefault()
+    if (submitting) return
 
-    if (editingCategory) {
-      await updateCategory(editingCategory.id, form)
-    } else {
-      await createCategory(form)
+    setSubmitting(true)
+    try {
+      if (editingCategory) {
+        await updateCategory(editingCategory.id, form)
+      } else {
+        await createCategory(form)
+      }
+
+      closeForm()
+      load()
+    } finally {
+      setSubmitting(false)
     }
-
-    closeForm()
-    load()
   }
 
   async function handleDelete() {
@@ -148,9 +156,11 @@ export default function Categories() {
 
           <button
             type="submit"
-            className="rounded-lg bg-slate-900 px-3 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-slate-800 hover:shadow-md dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
+            disabled={submitting}
+            className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-slate-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-70 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
           >
-            {editingCategory ? 'Salvar' : 'Adicionar'}
+            {submitting && <Spinner />}
+            {submitting ? 'Salvando...' : editingCategory ? 'Salvar' : 'Adicionar'}
           </button>
         </form>
       </Modal>

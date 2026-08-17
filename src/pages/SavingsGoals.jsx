@@ -7,6 +7,7 @@ import {
 } from '../api/savingsGoals'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import Modal from '../components/Modal.jsx'
+import Spinner from '../components/Spinner.jsx'
 
 function formatCurrency(value) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -35,6 +36,8 @@ export default function SavingsGoals() {
   const [deletingId, setDeletingId] = useState(null)
   const [contributingGoal, setContributingGoal] = useState(null)
   const [contribution, setContribution] = useState(emptyContribution)
+  const [submitting, setSubmitting] = useState(false)
+  const [submittingContribution, setSubmittingContribution] = useState(false)
 
   useEffect(() => {
     load()
@@ -76,21 +79,27 @@ export default function SavingsGoals() {
 
   async function handleSubmit(event) {
     event.preventDefault()
+    if (submitting) return
 
-    const payload = {
-      name: form.name,
-      target_amount: Number(form.target_amount),
-      target_date: form.target_date || null,
+    setSubmitting(true)
+    try {
+      const payload = {
+        name: form.name,
+        target_amount: Number(form.target_amount),
+        target_date: form.target_date || null,
+      }
+
+      if (editingGoal) {
+        await updateSavingsGoal(editingGoal.id, payload)
+      } else {
+        await createSavingsGoal(payload)
+      }
+
+      closeForm()
+      load()
+    } finally {
+      setSubmitting(false)
     }
-
-    if (editingGoal) {
-      await updateSavingsGoal(editingGoal.id, payload)
-    } else {
-      await createSavingsGoal(payload)
-    }
-
-    closeForm()
-    load()
   }
 
   async function handleDelete() {
@@ -101,16 +110,23 @@ export default function SavingsGoals() {
 
   async function handleContribute(event) {
     event.preventDefault()
+    if (submittingContribution) return
+
     const amount = Number(contribution.amount)
     if (!amount) return
 
-    await updateSavingsGoal(contributingGoal.id, {
-      current_amount: contributingGoal.current_amount + amount,
-    })
+    setSubmittingContribution(true)
+    try {
+      await updateSavingsGoal(contributingGoal.id, {
+        current_amount: contributingGoal.current_amount + amount,
+      })
 
-    setContributingGoal(null)
-    setContribution(emptyContribution)
-    load()
+      setContributingGoal(null)
+      setContribution(emptyContribution)
+      load()
+    } finally {
+      setSubmittingContribution(false)
+    }
   }
 
   return (
@@ -250,9 +266,11 @@ export default function SavingsGoals() {
 
           <button
             type="submit"
-            className="rounded-lg bg-slate-900 px-3 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-slate-800 hover:shadow-md dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
+            disabled={submitting}
+            className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-slate-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-70 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
           >
-            {editingGoal ? 'Salvar' : 'Adicionar'}
+            {submitting && <Spinner />}
+            {submitting ? 'Salvando...' : editingGoal ? 'Salvar' : 'Adicionar'}
           </button>
         </form>
       </Modal>
@@ -276,9 +294,11 @@ export default function SavingsGoals() {
           />
           <button
             type="submit"
-            className="rounded-lg bg-slate-900 px-3 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-slate-800 hover:shadow-md dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
+            disabled={submittingContribution}
+            className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-slate-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-70 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
           >
-            Adicionar
+            {submittingContribution && <Spinner />}
+            {submittingContribution ? 'Adicionando...' : 'Adicionar'}
           </button>
         </form>
       </Modal>

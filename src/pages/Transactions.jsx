@@ -8,6 +8,7 @@ import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import ImportStatementModal from '../components/ImportStatementModal.jsx'
 import Modal from '../components/Modal.jsx'
 import ReceiptInput from '../components/ReceiptInput.jsx'
+import Spinner from '../components/Spinner.jsx'
 
 function formatCurrency(value) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -40,6 +41,7 @@ export default function Transactions() {
   const [deletingId, setDeletingId] = useState(null)
   const [editingTransaction, setEditingTransaction] = useState(null)
   const [removeExistingReceipt, setRemoveExistingReceipt] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const [search, setSearch] = useState('')
   const [duplicateWarning, setDuplicateWarning] = useState(null)
   const [descriptionSuggestion, setDescriptionSuggestion] = useState(null)
@@ -181,22 +183,28 @@ export default function Transactions() {
 
   async function handleSubmit(event) {
     event.preventDefault()
+    if (submitting) return
 
-    const payload = {
-      ...form,
-      account_id: form.account_id || null,
-      amount: Number(form.amount),
+    setSubmitting(true)
+    try {
+      const payload = {
+        ...form,
+        account_id: form.account_id || null,
+        amount: Number(form.amount),
+      }
+
+      if (editingTransaction) {
+        if (removeExistingReceipt && !form.receipt) payload.remove_receipt = 1
+        await updateTransaction(editingTransaction.id, payload)
+      } else {
+        await createTransaction(payload)
+      }
+
+      closeForm()
+      load()
+    } finally {
+      setSubmitting(false)
     }
-
-    if (editingTransaction) {
-      if (removeExistingReceipt && !form.receipt) payload.remove_receipt = 1
-      await updateTransaction(editingTransaction.id, payload)
-    } else {
-      await createTransaction(payload)
-    }
-
-    closeForm()
-    load()
   }
 
   async function handleDelete() {
@@ -421,9 +429,11 @@ export default function Transactions() {
 
           <button
             type="submit"
-            className="rounded-lg bg-slate-900 px-3 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-slate-800 hover:shadow-md sm:col-span-2 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
+            disabled={submitting}
+            className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-slate-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-70 sm:col-span-2 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
           >
-            {editingTransaction ? 'Salvar' : 'Adicionar'}
+            {submitting && <Spinner />}
+            {submitting ? 'Salvando...' : editingTransaction ? 'Salvar' : 'Adicionar'}
           </button>
         </form>
       </Modal>

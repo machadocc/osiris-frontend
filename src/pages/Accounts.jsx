@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { createAccount, deleteAccount, listAccounts, updateAccount } from '../api/accounts'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import Modal from '../components/Modal.jsx'
+import Spinner from '../components/Spinner.jsx'
 
 function formatCurrency(value) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -16,6 +17,7 @@ export default function Accounts() {
   const [showForm, setShowForm] = useState(false)
   const [editingAccount, setEditingAccount] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     load()
@@ -48,16 +50,23 @@ export default function Accounts() {
 
   async function handleSubmit(event) {
     event.preventDefault()
-    const payload = { ...form, institution: form.institution || null }
+    if (submitting) return
 
-    if (editingAccount) {
-      await updateAccount(editingAccount.id, payload)
-    } else {
-      await createAccount(payload)
+    setSubmitting(true)
+    try {
+      const payload = { ...form, institution: form.institution || null }
+
+      if (editingAccount) {
+        await updateAccount(editingAccount.id, payload)
+      } else {
+        await createAccount(payload)
+      }
+
+      closeForm()
+      load()
+    } finally {
+      setSubmitting(false)
     }
-
-    closeForm()
-    load()
   }
 
   async function handleDelete() {
@@ -143,9 +152,11 @@ export default function Accounts() {
 
           <button
             type="submit"
-            className="rounded-lg bg-slate-900 px-3 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-slate-800 hover:shadow-md dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
+            disabled={submitting}
+            className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-slate-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-70 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
           >
-            {editingAccount ? 'Salvar' : 'Adicionar'}
+            {submitting && <Spinner />}
+            {submitting ? 'Salvando...' : editingAccount ? 'Salvar' : 'Adicionar'}
           </button>
         </form>
       </Modal>

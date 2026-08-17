@@ -8,6 +8,7 @@ import {
 } from '../api/spendingLimits'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import Modal from '../components/Modal.jsx'
+import Spinner from '../components/Spinner.jsx'
 
 function formatCurrency(value) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -27,6 +28,7 @@ export default function SpendingLimits() {
   const [showForm, setShowForm] = useState(false)
   const [editingLimit, setEditingLimit] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     load()
@@ -67,20 +69,27 @@ export default function SpendingLimits() {
 
   async function handleSubmit(event) {
     event.preventDefault()
-    const payload = {
-      ...form,
-      category_id: form.category_id || null,
-      limit_amount: Number(form.limit_amount),
-    }
+    if (submitting) return
 
-    if (editingLimit) {
-      await updateSpendingLimit(editingLimit.id, payload)
-    } else {
-      await createSpendingLimit(payload)
-    }
+    setSubmitting(true)
+    try {
+      const payload = {
+        ...form,
+        category_id: form.category_id || null,
+        limit_amount: Number(form.limit_amount),
+      }
 
-    closeForm()
-    load()
+      if (editingLimit) {
+        await updateSpendingLimit(editingLimit.id, payload)
+      } else {
+        await createSpendingLimit(payload)
+      }
+
+      closeForm()
+      load()
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   async function handleDelete() {
@@ -196,9 +205,11 @@ export default function SpendingLimits() {
 
           <button
             type="submit"
-            className="rounded-lg bg-slate-900 px-3 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-slate-800 hover:shadow-md dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
+            disabled={submitting}
+            className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-slate-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-70 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
           >
-            {editingLimit ? 'Salvar' : 'Adicionar'}
+            {submitting && <Spinner />}
+            {submitting ? 'Salvando...' : editingLimit ? 'Salvar' : 'Adicionar'}
           </button>
         </form>
       </Modal>
