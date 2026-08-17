@@ -164,6 +164,15 @@ export default function Dashboard() {
       .finally(() => setLoading(false))
   }, [month])
 
+  useEffect(() => {
+    function handleExternalCreate() {
+      getDashboardSummary({ month }).then(setSummary)
+    }
+    window.addEventListener('osiris:transaction-created', handleExternalCreate)
+    return () => window.removeEventListener('osiris:transaction-created', handleExternalCreate)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [month])
+
   if (loading || !summary) {
     return <p className="text-slate-500 dark:text-neutral-400">Carregando...</p>
   }

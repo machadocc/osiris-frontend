@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import InstallPrompt from './InstallPrompt.jsx'
 import Logo from './Logo.jsx'
+import QuickAddFab from './QuickAddFab.jsx'
 import Sidebar from './Sidebar.jsx'
 
 export default function Layout() {
@@ -30,6 +31,7 @@ export default function Layout() {
       </div>
 
       <InstallPrompt />
+      <QuickAddFab />
     </div>
   )
 }

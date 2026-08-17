@@ -11,7 +11,6 @@ import ImportStatementModal from '../components/ImportStatementModal.jsx'
 import Modal from '../components/Modal.jsx'
 import ReceiptInput from '../components/ReceiptInput.jsx'
 import Spinner from '../components/Spinner.jsx'
-import { parseQuickAdd } from '../utils/quickAddParser.js'
 
 function formatCurrency(value) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -54,9 +53,6 @@ export default function Transactions() {
   const [search, setSearch] = useState('')
   const [duplicateWarning, setDuplicateWarning] = useState(null)
   const [descriptionSuggestion, setDescriptionSuggestion] = useState(null)
-  const [quickAddText, setQuickAddText] = useState('')
-  const [quickAddParsed, setQuickAddParsed] = useState(null)
-  const [quickAddSubmitting, setQuickAddSubmitting] = useState(false)
   const [splitMode, setSplitMode] = useState(false)
   const [splitRows, setSplitRows] = useState([{ ...emptySplitRow }, { ...emptySplitRow }])
 
@@ -69,6 +65,15 @@ export default function Transactions() {
     return () => clearTimeout(timeout)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search])
+
+  useEffect(() => {
+    function handleExternalCreate() {
+      load()
+    }
+    window.addEventListener('osiris:transaction-created', handleExternalCreate)
+    return () => window.removeEventListener('osiris:transaction-created', handleExternalCreate)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function load(searchTerm = search) {
     setLoading(true)
@@ -267,45 +272,6 @@ export default function Transactions() {
     load()
   }
 
-  function handleQuickAddParse(event) {
-    event.preventDefault()
-    if (!quickAddText.trim()) return
-
-    const parsed = parseQuickAdd(quickAddText)
-    setQuickAddParsed({
-      amount: parsed.amount !== null ? String(parsed.amount) : '',
-      date: parsed.date,
-      description: parsed.description,
-      category_id: '',
-      account_id: '',
-    })
-  }
-
-  function closeQuickAdd() {
-    setQuickAddText('')
-    setQuickAddParsed(null)
-  }
-
-  async function handleQuickAddConfirm(event) {
-    event.preventDefault()
-    if (quickAddSubmitting) return
-
-    setQuickAddSubmitting(true)
-    try {
-      await createTransaction({
-        category_id: quickAddParsed.category_id,
-        account_id: quickAddParsed.account_id,
-        amount: Number(quickAddParsed.amount),
-        date: quickAddParsed.date,
-        description: quickAddParsed.description,
-      })
-      closeQuickAdd()
-      load()
-    } finally {
-      setQuickAddSubmitting(false)
-    }
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -327,96 +293,6 @@ export default function Transactions() {
           </button>
         </div>
       </div>
-
-      <form onSubmit={handleQuickAddParse} className="flex flex-wrap items-center gap-2">
-        <input
-          type="text"
-          placeholder='Adicionar rápido: "50 mercado hoje"'
-          value={quickAddText}
-          onChange={(event) => setQuickAddText(event.target.value)}
-          className="w-full max-w-sm rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-        />
-        <button
-          type="submit"
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
-        >
-          Adicionar
-        </button>
-      </form>
-
-      {quickAddParsed && (
-        <form
-          onSubmit={handleQuickAddConfirm}
-          className="grid gap-3 rounded-xl bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-5 dark:bg-neutral-900"
-        >
-          <input
-            type="number"
-            step="0.01"
-            min="0.01"
-            required
-            placeholder="Valor"
-            value={quickAddParsed.amount}
-            onChange={(event) => setQuickAddParsed({ ...quickAddParsed, amount: event.target.value })}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-          />
-          <input
-            type="date"
-            required
-            value={quickAddParsed.date}
-            onChange={(event) => setQuickAddParsed({ ...quickAddParsed, date: event.target.value })}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-          />
-          <input
-            type="text"
-            placeholder="Descrição"
-            value={quickAddParsed.description}
-            onChange={(event) => setQuickAddParsed({ ...quickAddParsed, description: event.target.value })}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-          />
-          <div className="flex items-center gap-2">
-            <select
-              required
-              value={quickAddParsed.category_id}
-              onChange={(event) => setQuickAddParsed({ ...quickAddParsed, category_id: event.target.value })}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-            >
-              <option value="" disabled className="text-slate-400 dark:text-neutral-500">Selecione a categoria</option>
-              <CategoryOptionGroups categories={categories} />
-            </select>
-            <CategoryTypeTag type={categories.find((category) => String(category.id) === String(quickAddParsed.category_id))?.type} />
-          </div>
-          <select
-            required
-            value={quickAddParsed.account_id}
-            onChange={(event) => setQuickAddParsed({ ...quickAddParsed, account_id: event.target.value })}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-          >
-            <option value="" disabled className="text-slate-400 dark:text-neutral-500">Selecione a conta</option>
-            {accounts.map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.name}
-              </option>
-            ))}
-          </select>
-          <div className="flex items-center gap-2 sm:col-span-2 lg:col-span-5">
-            <button
-              type="submit"
-              disabled={quickAddSubmitting}
-              className="flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
-            >
-              {quickAddSubmitting && <Spinner />}
-              {quickAddSubmitting ? 'Salvando...' : 'Confirmar'}
-            </button>
-            <button
-              type="button"
-              onClick={closeQuickAdd}
-              className="text-sm text-slate-500 hover:text-slate-700 dark:text-neutral-400 dark:hover:text-neutral-200"
-            >
-              Cancelar
-            </button>
-          </div>
-        </form>
-      )}
 
       <input
         type="search"
