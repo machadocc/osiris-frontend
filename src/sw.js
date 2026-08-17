@@ -18,9 +18,9 @@ self.addEventListener('push', (event) => {
       badge: '/icon-192.png',
       vibrate: [200, 100, 200],
       requireInteraction: true,
-      tag: 'osiris-limit-alert',
+      tag: payload.tag || 'osiris-notification',
       renotify: true,
-      actions: [{ action: 'view', title: '📊 Ver limites' }],
+      actions: payload.actionLabel ? [{ action: 'view', title: payload.actionLabel }] : [],
       data: { url: payload.url || '/' },
     }),
   )
