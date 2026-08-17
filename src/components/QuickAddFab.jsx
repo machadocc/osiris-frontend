@@ -89,7 +89,7 @@ export default function QuickAddFab() {
         <div
           role="dialog"
           aria-label="Nova transação rápida"
-          className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-2xl bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl sm:inset-x-auto sm:bottom-40 sm:right-4 sm:w-96 sm:rounded-2xl sm:pb-4 dark:bg-neutral-900"
+          className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-2xl bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl sm:inset-x-auto sm:bottom-40 sm:right-4 sm:max-h-[calc(100vh-11rem)] sm:w-96 sm:rounded-2xl sm:pb-4 dark:bg-neutral-900"
         >
           <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-slate-200 sm:hidden dark:bg-neutral-700" />
 
@@ -204,15 +204,17 @@ export default function QuickAddFab() {
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={() => (open ? handleClose() : setOpen(true))}
-        aria-label={open ? 'Fechar adicionar transação rápida' : 'Adicionar transação rápida'}
-        title="Adicionar transação rápida"
-        className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg transition-transform hover:scale-105 hover:bg-slate-800 active:scale-95 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
-      >
-        <PlusIcon className={`h-6 w-6 transition-transform duration-200 ${open ? 'rotate-45' : ''}`} />
-      </button>
+      {!open && (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label="Adicionar transação rápida"
+          title="Adicionar transação rápida"
+          className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg transition-transform hover:scale-105 hover:bg-slate-800 active:scale-95 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
+        >
+          <PlusIcon className="h-6 w-6" />
+        </button>
+      )}
     </>
   )
 }
