@@ -156,6 +156,12 @@ export default function SpendingLimits() {
               </span>
               <span>{spendingLimit.percentage}%</span>
             </div>
+
+            {spendingLimit.daily_allowance !== null && (
+              <p className="mt-2 text-xs text-emerald-600 dark:text-emerald-400">
+                Você pode gastar até {formatCurrency(spendingLimit.daily_allowance)} hoje sem estourar esse limite.
+              </p>
+            )}
           </div>
         ))}
       </div>

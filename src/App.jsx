@@ -10,6 +10,7 @@ import Accounts from './pages/Accounts.jsx'
 import SpendingLimits from './pages/SpendingLimits.jsx'
 import SavingsGoals from './pages/SavingsGoals.jsx'
 import RecurringTransactions from './pages/RecurringTransactions.jsx'
+import Compare from './pages/Compare.jsx'
 import Settings from './pages/Settings.jsx'
 
 export default function App() {
@@ -27,6 +28,7 @@ export default function App() {
           <Route path="/spending-limits" element={<SpendingLimits />} />
           <Route path="/savings-goals" element={<SavingsGoals />} />
           <Route path="/recurring-transactions" element={<RecurringTransactions />} />
+          <Route path="/compare" element={<Compare />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
       </Route>

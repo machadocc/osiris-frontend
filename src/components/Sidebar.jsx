@@ -10,6 +10,7 @@ const links = [
   { to: '/spending-limits', label: 'Limites de gastos' },
   { to: '/savings-goals', label: 'Metas de economia' },
   { to: '/recurring-transactions', label: 'Lançamentos recorrentes' },
+  { to: '/compare', label: 'Comparar meses' },
 ]
 
 export default function Sidebar({ open, onClose }) {

@@ -9,9 +9,14 @@ import ImportStatementModal from '../components/ImportStatementModal.jsx'
 import Modal from '../components/Modal.jsx'
 import ReceiptInput from '../components/ReceiptInput.jsx'
 import Spinner from '../components/Spinner.jsx'
+import { parseQuickAdd } from '../utils/quickAddParser.js'
 
 function formatCurrency(value) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
+function transactionType(transaction) {
+  return transaction.category?.type ?? transaction.splits?.[0]?.category?.type
 }
 
 function formatDate(dateStr) {
@@ -27,6 +32,8 @@ const emptyForm = {
   date: new Date().toISOString().slice(0, 10),
   receipt: null,
 }
+
+const emptySplitRow = { category_id: '', amount: '' }
 
 export default function Transactions() {
   const [transactions, setTransactions] = useState([])
@@ -45,6 +52,11 @@ export default function Transactions() {
   const [search, setSearch] = useState('')
   const [duplicateWarning, setDuplicateWarning] = useState(null)
   const [descriptionSuggestion, setDescriptionSuggestion] = useState(null)
+  const [quickAddText, setQuickAddText] = useState('')
+  const [quickAddParsed, setQuickAddParsed] = useState(null)
+  const [quickAddSubmitting, setQuickAddSubmitting] = useState(false)
+  const [splitMode, setSplitMode] = useState(false)
+  const [splitRows, setSplitRows] = useState([{ ...emptySplitRow }, { ...emptySplitRow }])
 
   useEffect(() => {
     load()
@@ -81,7 +93,7 @@ export default function Transactions() {
   // Feature 1: warn when this transaction would push a spending limit past 80%.
   const limitAlerts = useMemo(() => {
     const amount = Number(form.amount)
-    if (!form.category_id || !amount || !selectedCategory || selectedCategory.type !== 'expense') return []
+    if (splitMode || !form.category_id || !amount || !selectedCategory || selectedCategory.type !== 'expense') return []
 
     const transactionMonth = form.date.slice(0, 7)
 
@@ -94,7 +106,7 @@ export default function Transactions() {
         return { ...limit, projected, percentage }
       })
       .filter((limit) => limit.percentage >= 80)
-  }, [form.category_id, form.amount, form.date, selectedCategory, spendingLimits])
+  }, [form.category_id, form.amount, form.date, selectedCategory, spendingLimits, splitMode])
 
   // Feature 6: suggest a category from past transactions with a similar description.
   useEffect(() => {
@@ -155,6 +167,8 @@ export default function Transactions() {
     setEditingTransaction(null)
     setRemoveExistingReceipt(false)
     setForm(emptyForm)
+    setSplitMode(false)
+    setSplitRows([{ ...emptySplitRow }, { ...emptySplitRow }])
     setShowForm(true)
   }
 
@@ -162,13 +176,22 @@ export default function Transactions() {
     setEditingTransaction(transaction)
     setRemoveExistingReceipt(false)
     setForm({
-      category_id: transaction.category.id,
+      category_id: transaction.category?.id ?? '',
       account_id: transaction.account?.id ?? '',
       amount: String(transaction.amount),
       description: transaction.description ?? '',
       date: transaction.date,
       receipt: null,
     })
+
+    if (transaction.splits && transaction.splits.length > 0) {
+      setSplitMode(true)
+      setSplitRows(transaction.splits.map((split) => ({ category_id: split.category.id, amount: String(split.amount) })))
+    } else {
+      setSplitMode(false)
+      setSplitRows([{ ...emptySplitRow }, { ...emptySplitRow }])
+    }
+
     setShowForm(true)
   }
 
@@ -177,8 +200,33 @@ export default function Transactions() {
     setEditingTransaction(null)
     setRemoveExistingReceipt(false)
     setForm(emptyForm)
+    setSplitMode(false)
+    setSplitRows([{ ...emptySplitRow }, { ...emptySplitRow }])
     setDuplicateWarning(null)
     setDescriptionSuggestion(null)
+  }
+
+  // RF-TRX-13: soma dos splits precisa bater com o valor total antes de poder salvar.
+  const splitTotal = useMemo(
+    () => splitRows.reduce((sum, row) => sum + (Number(row.amount) || 0), 0),
+    [splitRows],
+  )
+  const splitDifference = Math.round((Number(form.amount || 0) - splitTotal) * 100) / 100
+  const splitFirstCategory = useMemo(
+    () => categories.find((category) => String(category.id) === String(splitRows[0]?.category_id)),
+    [categories, splitRows],
+  )
+
+  function addSplitRow() {
+    setSplitRows((current) => [...current, { ...emptySplitRow }])
+  }
+
+  function removeSplitRow(index) {
+    setSplitRows((current) => current.filter((_, i) => i !== index))
+  }
+
+  function updateSplitRow(index, field, value) {
+    setSplitRows((current) => current.map((row, i) => (i === index ? { ...row, [field]: value } : row)))
   }
 
   async function handleSubmit(event) {
@@ -188,9 +236,17 @@ export default function Transactions() {
     setSubmitting(true)
     try {
       const payload = {
-        ...form,
         account_id: form.account_id || null,
         amount: Number(form.amount),
+        description: form.description,
+        date: form.date,
+        receipt: form.receipt,
+      }
+
+      if (splitMode) {
+        payload.splits = splitRows.map((row) => ({ category_id: row.category_id, amount: Number(row.amount) }))
+      } else {
+        payload.category_id = form.category_id
       }
 
       if (editingTransaction) {
@@ -211,6 +267,46 @@ export default function Transactions() {
     await deleteTransaction(deletingId)
     setDeletingId(null)
     load()
+  }
+
+  // RF-TRX-12: adição rápida por texto livre ("50 mercado hoje").
+  function handleQuickAddParse(event) {
+    event.preventDefault()
+    if (!quickAddText.trim()) return
+
+    const parsed = parseQuickAdd(quickAddText)
+    setQuickAddParsed({
+      amount: parsed.amount !== null ? String(parsed.amount) : '',
+      date: parsed.date,
+      description: parsed.description,
+      category_id: '',
+      account_id: '',
+    })
+  }
+
+  function closeQuickAdd() {
+    setQuickAddText('')
+    setQuickAddParsed(null)
+  }
+
+  async function handleQuickAddConfirm(event) {
+    event.preventDefault()
+    if (quickAddSubmitting) return
+
+    setQuickAddSubmitting(true)
+    try {
+      await createTransaction({
+        category_id: quickAddParsed.category_id,
+        account_id: quickAddParsed.account_id,
+        amount: Number(quickAddParsed.amount),
+        date: quickAddParsed.date,
+        description: quickAddParsed.description,
+      })
+      closeQuickAdd()
+      load()
+    } finally {
+      setQuickAddSubmitting(false)
+    }
   }
 
   return (
@@ -234,6 +330,97 @@ export default function Transactions() {
           </button>
         </div>
       </div>
+
+      <form onSubmit={handleQuickAddParse} className="flex flex-wrap items-center gap-2">
+        <input
+          type="text"
+          placeholder='Adicionar rápido: "50 mercado hoje"'
+          value={quickAddText}
+          onChange={(event) => setQuickAddText(event.target.value)}
+          className="w-full max-w-sm rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+        />
+        <button
+          type="submit"
+          className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
+        >
+          Adicionar
+        </button>
+      </form>
+
+      {quickAddParsed && (
+        <form
+          onSubmit={handleQuickAddConfirm}
+          className="grid gap-3 rounded-xl bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-5 dark:bg-neutral-900"
+        >
+          <input
+            type="number"
+            step="0.01"
+            min="0.01"
+            required
+            placeholder="Valor"
+            value={quickAddParsed.amount}
+            onChange={(event) => setQuickAddParsed({ ...quickAddParsed, amount: event.target.value })}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+          />
+          <input
+            type="date"
+            required
+            value={quickAddParsed.date}
+            onChange={(event) => setQuickAddParsed({ ...quickAddParsed, date: event.target.value })}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+          />
+          <input
+            type="text"
+            placeholder="Descrição"
+            value={quickAddParsed.description}
+            onChange={(event) => setQuickAddParsed({ ...quickAddParsed, description: event.target.value })}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+          />
+          <select
+            required
+            value={quickAddParsed.category_id}
+            onChange={(event) => setQuickAddParsed({ ...quickAddParsed, category_id: event.target.value })}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+          >
+            <option value="">Categoria</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+          <select
+            required
+            value={quickAddParsed.account_id}
+            onChange={(event) => setQuickAddParsed({ ...quickAddParsed, account_id: event.target.value })}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+          >
+            <option value="">Conta</option>
+            {accounts.map((account) => (
+              <option key={account.id} value={account.id}>
+                {account.name}
+              </option>
+            ))}
+          </select>
+          <div className="flex items-center gap-2 sm:col-span-2 lg:col-span-5">
+            <button
+              type="submit"
+              disabled={quickAddSubmitting}
+              className="flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
+            >
+              {quickAddSubmitting && <Spinner />}
+              {quickAddSubmitting ? 'Salvando...' : 'Confirmar'}
+            </button>
+            <button
+              type="button"
+              onClick={closeQuickAdd}
+              className="text-sm text-slate-500 hover:text-slate-700 dark:text-neutral-400 dark:hover:text-neutral-200"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      )}
 
       <input
         type="search"
@@ -260,7 +447,13 @@ export default function Transactions() {
                       />
                     </button>
                   )}
-                  <CategoryBadge category={transaction.category} />
+                  {transaction.category ? (
+                    <CategoryBadge category={transaction.category} />
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">
+                      🔀 múltiplas categorias
+                    </span>
+                  )}
                   {transaction.is_recurring && (
                     <span
                       title="Parece uma transação recorrente"
@@ -286,12 +479,12 @@ export default function Transactions() {
                 <div className="flex items-center justify-between gap-4 sm:justify-end">
                   <span
                     className={
-                      transaction.category.type === 'income'
+                      transactionType(transaction) === 'income'
                         ? 'text-emerald-600 dark:text-emerald-400'
                         : 'text-red-600 dark:text-red-400'
                     }
                   >
-                    {transaction.category.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
+                    {transactionType(transaction) === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
                   </span>
                   <div className="flex items-center gap-4">
                     <button
@@ -321,33 +514,108 @@ export default function Transactions() {
 
       <Modal open={showForm} onClose={closeForm} title={editingTransaction ? 'Editar transação' : 'Nova transação'}>
         <form onSubmit={handleSubmit} className="grid gap-3 sm:grid-cols-2">
-          <div className="flex items-center gap-2 sm:col-span-2">
-            <select
-              required
-              value={form.category_id}
-              onChange={(event) => setForm({ ...form, category_id: event.target.value })}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-            >
-              <option value="">Categoria</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-
-            {selectedCategory && (
-              <span
-                className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${
-                  selectedCategory.type === 'income'
-                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'
-                    : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
-                }`}
+          {!splitMode ? (
+            <div className="flex items-center gap-2 sm:col-span-2">
+              <select
+                required
+                value={form.category_id}
+                onChange={(event) => setForm({ ...form, category_id: event.target.value })}
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
               >
-                {selectedCategory.type === 'income' ? 'Receita' : 'Despesa'}
-              </span>
-            )}
-          </div>
+                <option value="">Categoria</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+
+              {selectedCategory && (
+                <span
+                  className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${
+                    selectedCategory.type === 'income'
+                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'
+                      : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
+                  }`}
+                >
+                  {selectedCategory.type === 'income' ? 'Receita' : 'Despesa'}
+                </span>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setSplitMode(true)}
+                className="whitespace-nowrap text-xs font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
+              >
+                Dividir em categorias
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2 sm:col-span-2">
+              {splitRows.map((row, index) => {
+                const rowOptions = splitFirstCategory
+                  ? categories.filter((category) => category.type === splitFirstCategory.type)
+                  : categories
+
+                return (
+                  <div key={index} className="flex items-center gap-2">
+                    <select
+                      required
+                      value={row.category_id}
+                      onChange={(event) => updateSplitRow(index, 'category_id', event.target.value)}
+                      className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                    >
+                      <option value="">Categoria</option>
+                      {rowOptions.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      required
+                      placeholder="Valor"
+                      value={row.amount}
+                      onChange={(event) => updateSplitRow(index, 'amount', event.target.value)}
+                      className="w-28 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                    />
+                    {splitRows.length > 2 && (
+                      <button
+                        type="button"
+                        onClick={() => removeSplitRow(index)}
+                        className="text-slate-400 hover:text-red-600 dark:text-neutral-500 dark:hover:text-red-400"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
+
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                <button type="button" onClick={addSplitRow} className="font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+                  + Adicionar categoria
+                </button>
+                <span className={splitDifference === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}>
+                  {splitDifference === 0
+                    ? 'R$ 0,00 restantes'
+                    : splitDifference > 0
+                      ? `Faltam ${formatCurrency(splitDifference)}`
+                      : `${formatCurrency(Math.abs(splitDifference))} a mais`}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSplitMode(false)}
+                  className="font-medium text-slate-500 hover:text-slate-700 dark:text-neutral-400 dark:hover:text-neutral-200"
+                >
+                  Usar categoria única
+                </button>
+              </div>
+            </div>
+          )}
 
           <select
             required
@@ -430,7 +698,7 @@ export default function Transactions() {
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || (splitMode && splitDifference !== 0)}
             className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-slate-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-70 sm:col-span-2 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
           >
             {submitting && <Spinner />}

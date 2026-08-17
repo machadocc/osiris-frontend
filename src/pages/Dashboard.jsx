@@ -22,6 +22,10 @@ function monthLabel(monthStr) {
   return label.charAt(0).toUpperCase() + label.slice(1)
 }
 
+function transactionType(transaction) {
+  return transaction.category?.type ?? transaction.splits?.[0]?.category?.type
+}
+
 function formatCurrency(value) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
@@ -455,7 +459,13 @@ export default function Dashboard() {
             {summary.recent_transactions.map((transaction) => (
               <li key={transaction.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2 text-sm">
                 <div className="flex flex-wrap items-center gap-2">
-                  <CategoryBadge category={transaction.category} />
+                  {transaction.category ? (
+                    <CategoryBadge category={transaction.category} />
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">
+                      🔀 múltiplas categorias
+                    </span>
+                  )}
                   {transaction.account && (
                     <span className="text-xs text-slate-400 dark:text-neutral-500">{transaction.account.name}</span>
                   )}
@@ -463,12 +473,12 @@ export default function Dashboard() {
                 </div>
                 <span
                   className={`shrink-0 ${
-                    transaction.category.type === 'income'
+                    transactionType(transaction) === 'income'
                       ? 'text-emerald-600 dark:text-emerald-400'
                       : 'text-red-600 dark:text-red-400'
                   }`}
                 >
-                  {transaction.category.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
+                  {transactionType(transaction) === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
                 </span>
               </li>
             ))}
