@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createAccount, deleteAccount, listAccounts, updateAccount } from '../api/accounts'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
+import Loading from '../components/Loading.jsx'
 import Modal from '../components/Modal.jsx'
 import Spinner from '../components/Spinner.jsx'
 
@@ -82,19 +83,19 @@ export default function Accounts() {
         <button
           type="button"
           onClick={openCreateForm}
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-md dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
+          disabled={loading}
+          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
         >
           + Adicionar
         </button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        {loading && <p className="text-sm text-slate-500 dark:text-neutral-400">Carregando...</p>}
-
-        {!loading && accounts.length === 0 && (
-          <p className="text-sm text-slate-400 dark:text-neutral-500">Nenhuma conta cadastrada.</p>
-        )}
-
+      {loading ? (
+        <Loading />
+      ) : accounts.length === 0 ? (
+        <p className="text-sm text-slate-400 dark:text-neutral-500">Nenhuma conta cadastrada.</p>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2">
         {accounts.map((account) => (
           <div key={account.id} className="rounded-xl bg-white p-5 shadow-sm dark:bg-neutral-900">
             <div className="flex items-start justify-between">
@@ -129,7 +130,8 @@ export default function Accounts() {
             </p>
           </div>
         ))}
-      </div>
+        </div>
+      )}
 
       <Modal open={showForm} onClose={closeForm} title={editingAccount ? 'Editar conta' : 'Nova conta'}>
         <form onSubmit={handleSubmit} className="grid gap-3">

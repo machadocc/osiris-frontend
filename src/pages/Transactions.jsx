@@ -8,6 +8,7 @@ import CategoryOptionGroups from '../components/CategoryOptionGroups.jsx'
 import CategoryTypeTag from '../components/CategoryTypeTag.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import ImportStatementModal from '../components/ImportStatementModal.jsx'
+import Loading from '../components/Loading.jsx'
 import Modal from '../components/Modal.jsx'
 import ReceiptInput from '../components/ReceiptInput.jsx'
 import Spinner from '../components/Spinner.jsx'
@@ -280,14 +281,16 @@ export default function Transactions() {
           <button
             type="button"
             onClick={() => setShowImportModal(true)}
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
+            disabled={loading && categories.length === 0}
+            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
           >
             Importar extrato
           </button>
           <button
             type="button"
             onClick={openCreateForm}
-            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-md dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
+            disabled={loading && categories.length === 0}
+            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
           >
             + Adicionar
           </button>
@@ -304,7 +307,7 @@ export default function Transactions() {
 
       <div className="rounded-xl bg-white p-5 shadow-sm dark:bg-neutral-900">
         {loading ? (
-          <p className="text-sm text-slate-500 dark:text-neutral-400">Carregando...</p>
+          <Loading />
         ) : (
           <ul className="divide-y divide-slate-100 dark:divide-neutral-800">
             {transactions.map((transaction) => (

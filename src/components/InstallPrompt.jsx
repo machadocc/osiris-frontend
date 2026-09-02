@@ -37,7 +37,7 @@ export default function InstallPrompt() {
 
   return (
     <div className="fixed bottom-4 left-1/2 z-40 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center gap-3 rounded-xl bg-slate-900 px-4 py-3 text-sm text-white shadow-2xl dark:bg-neutral-100 dark:text-neutral-900">
-      <span className="flex-1">Instale o Osiris no seu dispositivo para acesso rápido, mesmo offline.</span>
+      <span className="flex-1">Instale o Osiris no seu dispositivo para acesso rápido.</span>
       <button
         type="button"
         onClick={handleInstall}

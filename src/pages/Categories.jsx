@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { createCategory, deleteCategory, listCategories, updateCategory } from '../api/categories'
 import CategoryBadge from '../components/CategoryBadge.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
+import Loading from '../components/Loading.jsx'
 import Modal from '../components/Modal.jsx'
 import Spinner from '../components/Spinner.jsx'
 
@@ -77,7 +78,8 @@ export default function Categories() {
         <button
           type="button"
           onClick={openCreateForm}
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-md dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
+          disabled={loading}
+          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
         >
           + Adicionar
         </button>
@@ -85,7 +87,7 @@ export default function Categories() {
 
       <div className="rounded-xl bg-white p-5 shadow-sm dark:bg-neutral-900">
         {loading ? (
-          <p className="text-sm text-slate-500 dark:text-neutral-400">Carregando...</p>
+          <Loading />
         ) : (
           <ul className="divide-y divide-slate-100 dark:divide-neutral-800">
             {categories.map((category) => (

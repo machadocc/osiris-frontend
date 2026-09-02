@@ -7,6 +7,7 @@ import {
   updateSavingsGoal,
 } from '../api/savingsGoals'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
+import Loading from '../components/Loading.jsx'
 import Modal from '../components/Modal.jsx'
 import Spinner from '../components/Spinner.jsx'
 
@@ -146,11 +147,14 @@ export default function SavingsGoals() {
         <button
           type="button"
           onClick={openCreateForm}
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-md dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
+          disabled={loading}
+          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
         >
           + Adicionar
         </button>
       </div>
+
+      {loading && <Loading />}
 
       {!loading && goals.length > 0 && (
         <div className="rounded-xl bg-white p-5 shadow-sm dark:bg-neutral-900">
@@ -188,13 +192,11 @@ export default function SavingsGoals() {
         </div>
       )}
 
+      {!loading && goals.length === 0 && (
+        <p className="text-sm text-slate-400 dark:text-neutral-500">Nenhuma meta de economia cadastrada.</p>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-2">
-        {loading && <p className="text-sm text-slate-500 dark:text-neutral-400">Carregando...</p>}
-
-        {!loading && goals.length === 0 && (
-          <p className="text-sm text-slate-400 dark:text-neutral-500">Nenhuma meta de economia cadastrada.</p>
-        )}
-
         {goals.map((goal) => {
           const remainingDays = goal.target_date ? daysUntil(goal.target_date) : null
 
