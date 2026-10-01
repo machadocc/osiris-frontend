@@ -4,6 +4,7 @@ import { getDashboardSummary } from '../api/dashboard'
 import { downloadMonthlyReport } from '../api/reports'
 import CategoryBadge from '../components/CategoryBadge.jsx'
 import HealthScoreCard from '../components/HealthScoreCard.jsx'
+import Loading from '../components/Loading.jsx'
 import OnboardingChecklist from '../components/OnboardingChecklist.jsx'
 
 function currentMonth() {
@@ -174,7 +175,7 @@ export default function Dashboard() {
   }, [month])
 
   if (loading || !summary) {
-    return <p className="text-slate-500 dark:text-neutral-400">Carregando...</p>
+    return <Loading />
   }
 
   const totalAccountsBalance = summary.accounts.reduce((sum, account) => sum + account.balance, 0)

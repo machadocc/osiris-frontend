@@ -177,11 +177,10 @@ export default function QuickAddFab() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          aria-label="Adicionar transação rápida"
-          title="Adicionar transação rápida"
-          className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg transition-transform hover:scale-105 hover:bg-slate-800 active:scale-95 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
+          className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] right-4 z-40 flex h-14 items-center justify-center gap-2 rounded-full bg-slate-900 px-5 text-sm font-medium text-white shadow-lg transition-transform hover:scale-105 hover:bg-slate-800 active:scale-95 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
         >
-          <PlusIcon className="h-6 w-6" />
+          <PlusIcon className="h-5 w-5" />
+          <span>Adicionar transação rápida</span>
         </button>
       )}
     </>

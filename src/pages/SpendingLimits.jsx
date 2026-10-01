@@ -9,6 +9,7 @@ import {
 import CategoryOptionGroups from '../components/CategoryOptionGroups.jsx'
 import CategoryTypeTag from '../components/CategoryTypeTag.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
+import Loading from '../components/Loading.jsx'
 import Modal from '../components/Modal.jsx'
 import Spinner from '../components/Spinner.jsx'
 
@@ -107,19 +108,19 @@ export default function SpendingLimits() {
         <button
           type="button"
           onClick={openCreateForm}
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-md dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
+          disabled={loading}
+          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-white"
         >
           + Adicionar
         </button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        {loading && <p className="text-sm text-slate-500 dark:text-neutral-400">Carregando...</p>}
-
-        {!loading && spendingLimits.length === 0 && (
-          <p className="text-sm text-slate-400 dark:text-neutral-500">Nenhum limite de gasto cadastrado.</p>
-        )}
-
+      {loading ? (
+        <Loading />
+      ) : spendingLimits.length === 0 ? (
+        <p className="text-sm text-slate-400 dark:text-neutral-500">Nenhum limite de gasto cadastrado.</p>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2">
         {spendingLimits.map((spendingLimit) => (
           <div key={spendingLimit.id} className="rounded-xl bg-white p-5 shadow-sm dark:bg-neutral-900">
             <div className="flex items-start justify-between">
@@ -166,7 +167,8 @@ export default function SpendingLimits() {
             )}
           </div>
         ))}
-      </div>
+        </div>
+      )}
 
       <Modal open={showForm} onClose={closeForm} title={editingLimit ? 'Editar limite de gastos' : 'Novo limite de gastos'}>
         <form onSubmit={handleSubmit} className="grid gap-3">

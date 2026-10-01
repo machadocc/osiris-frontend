@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { compareMonths } from '../api/dashboard'
+import Loading from '../components/Loading.jsx'
 
 function formatCurrency(value) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -79,7 +80,7 @@ export default function Compare() {
         </label>
       </div>
 
-      {loading && <p className="text-sm text-slate-500 dark:text-neutral-400">Carregando...</p>}
+      {loading && <Loading />}
 
       {!loading && data && (
         <>

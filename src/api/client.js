@@ -14,4 +14,16 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 429) {
+      const retryAfter = Number(error.response.headers?.['retry-after']) || 60
+      window.dispatchEvent(new CustomEvent('osiris:rate-limited', { detail: { retryAfter } }))
+    }
+
+    return Promise.reject(error)
+  },
+)
+
 export default api
