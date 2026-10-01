@@ -55,9 +55,11 @@ export default function Transactions() {
   const [descriptionSuggestion, setDescriptionSuggestion] = useState(null)
   const [splitMode, setSplitMode] = useState(false)
   const [splitRows, setSplitRows] = useState([{ ...emptySplitRow }, { ...emptySplitRow }])
+  const [correctInflation, setCorrectInflation] = useState(() => localStorage.getItem('osiris-correct-inflation') === '1')
 
   useEffect(() => {
     load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -65,6 +67,11 @@ export default function Transactions() {
     return () => clearTimeout(timeout)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search])
+
+  useEffect(() => {
+    load(search)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [correctInflation])
 
   useEffect(() => {
     function handleExternalCreate() {
@@ -75,10 +82,19 @@ export default function Transactions() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  function toggleCorrectInflation() {
+    const next = !correctInflation
+    setCorrectInflation(next)
+    localStorage.setItem('osiris-correct-inflation', next ? '1' : '0')
+  }
+
   function load(searchTerm = search) {
     setLoading(true)
     Promise.all([
-      listTransactions(searchTerm ? { search: searchTerm } : {}),
+      listTransactions({
+        ...(searchTerm ? { search: searchTerm } : {}),
+        ...(correctInflation ? { correct_inflation: '1' } : {}),
+      }),
       listCategories(),
       listAccounts(),
       listSpendingLimits(),
@@ -294,13 +310,24 @@ export default function Transactions() {
         </div>
       </div>
 
-      <input
-        type="search"
-        placeholder="Buscar por descrição..."
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
-        className="w-full max-w-sm rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-      />
+      <div className="flex flex-wrap items-center gap-3">
+        <input
+          type="search"
+          placeholder="Buscar por descrição..."
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          className="w-full max-w-sm rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+        />
+        <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-neutral-300">
+          <input
+            type="checkbox"
+            checked={correctInflation}
+            onChange={toggleCorrectInflation}
+            className="h-4 w-4 rounded border-slate-300 text-slate-900 dark:border-neutral-600 dark:bg-neutral-900"
+          />
+          Corrigir pela inflação (IPCA)
+        </label>
+      </div>
 
       <div className="rounded-xl bg-white p-5 shadow-sm dark:bg-neutral-900">
         {loading ? (
@@ -349,14 +376,26 @@ export default function Transactions() {
                   <span className="text-slate-400 dark:text-neutral-500">{formatDate(transaction.date)}</span>
                 </div>
                 <div className="flex items-center justify-between gap-4 sm:justify-end">
-                  <span
-                    className={
-                      transactionType(transaction) === 'income'
-                        ? 'text-emerald-600 dark:text-emerald-400'
-                        : 'text-red-600 dark:text-red-400'
-                    }
-                  >
-                    {transactionType(transaction) === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
+                  <span className="flex flex-col items-end">
+                    <span
+                      className={
+                        transactionType(transaction) === 'income'
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : 'text-red-600 dark:text-red-400'
+                      }
+                    >
+                      {transactionType(transaction) === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
+                    </span>
+                    {correctInflation &&
+                      transaction.adjusted_amount != null &&
+                      Math.abs(transaction.adjusted_amount - transaction.amount) >= 0.01 && (
+                        <span
+                          title="Estimativa com base no IPCA acumulado — não é um valor garantido"
+                          className="text-xs text-slate-400 dark:text-neutral-500"
+                        >
+                          estima-se hoje: {formatCurrency(transaction.adjusted_amount)}
+                        </span>
+                      )}
                   </span>
                   <div className="flex items-center gap-4">
                     <button
