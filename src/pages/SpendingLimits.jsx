@@ -148,7 +148,9 @@ export default function SpendingLimits() {
 
             <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-neutral-800">
               <div
-                className={`h-full rounded-full ${spendingLimit.percentage >= 100 ? 'bg-red-500' : 'bg-emerald-500'}`}
+                className={`h-full rounded-full ${
+                  spendingLimit.percentage >= 100 ? 'bg-red-500' : spendingLimit.percentage >= 80 ? 'bg-amber-500' : 'bg-emerald-500'
+                }`}
                 style={{ width: `${spendingLimit.percentage}%` }}
               />
             </div>
