@@ -18,7 +18,14 @@ export function AuthProvider({ children }) {
     authApi
       .me()
       .then(setUser)
-      .catch(() => localStorage.removeItem('token'))
+      .catch((error) => {
+        // Só um 401 de verdade significa token inválido/expirado — qualquer
+        // outro erro (429 de limite de requisições, falha de rede) é
+        // passageiro e não deve derrubar a sessão do usuário.
+        if (error.response?.status === 401) {
+          localStorage.removeItem('token')
+        }
+      })
       .finally(() => setLoading(false))
   }, [])
 

@@ -57,6 +57,8 @@ export default function Transactions() {
   const [splitMode, setSplitMode] = useState(false)
   const [splitRows, setSplitRows] = useState([{ ...emptySplitRow }, { ...emptySplitRow }])
   const [correctInflation, setCorrectInflation] = useState(() => localStorage.getItem('osiris-correct-inflation') === '1')
+  const [page, setPage] = useState(1)
+  const [lastPage, setLastPage] = useState(1)
 
   useEffect(() => {
     load()
@@ -64,13 +66,15 @@ export default function Transactions() {
   }, [])
 
   useEffect(() => {
-    const timeout = setTimeout(() => load(search), 350)
+    setPage(1)
+    const timeout = setTimeout(() => load(search, 1), 350)
     return () => clearTimeout(timeout)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search])
 
   useEffect(() => {
-    load(search)
+    setPage(1)
+    load(search, 1)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [correctInflation])
 
@@ -89,10 +93,11 @@ export default function Transactions() {
     localStorage.setItem('osiris-correct-inflation', next ? '1' : '0')
   }
 
-  function load(searchTerm = search) {
+  function load(searchTerm = search, pageNum = page) {
     setLoading(true)
     Promise.all([
       listTransactions({
+        page: pageNum,
         ...(searchTerm ? { search: searchTerm } : {}),
         ...(correctInflation ? { correct_inflation: '1' } : {}),
       }),
@@ -102,11 +107,17 @@ export default function Transactions() {
     ])
       .then(([transactionsResponse, categoriesResponse, accountsResponse, spendingLimitsResponse]) => {
         setTransactions(transactionsResponse.data)
+        setLastPage(transactionsResponse.meta.last_page)
         setCategories(categoriesResponse)
         setAccounts(accountsResponse)
         setSpendingLimits(spendingLimitsResponse)
       })
       .finally(() => setLoading(false))
+  }
+
+  function goToPage(nextPage) {
+    setPage(nextPage)
+    load(search, nextPage)
   }
 
   const selectedCategory = useMemo(
@@ -336,6 +347,7 @@ export default function Transactions() {
         {loading ? (
           <Loading />
         ) : (
+          <>
           <ul className="divide-y divide-slate-100 dark:divide-neutral-800">
             {transactions.map((transaction) => (
               <li key={transaction.id} className="flex flex-col gap-2 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
@@ -423,6 +435,30 @@ export default function Transactions() {
               </p>
             )}
           </ul>
+          {lastPage > 1 && (
+            <div className="mt-4 flex items-center justify-center gap-3 border-t border-slate-100 pt-4 dark:border-neutral-800">
+              <button
+                type="button"
+                onClick={() => goToPage(page - 1)}
+                disabled={page <= 1}
+                className="rounded-lg border border-slate-300 px-2 py-1 text-sm text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"
+              >
+                ←
+              </button>
+              <span className="text-sm text-slate-600 dark:text-neutral-300">
+                Página {page} de {lastPage}
+              </span>
+              <button
+                type="button"
+                onClick={() => goToPage(page + 1)}
+                disabled={page >= lastPage}
+                className="rounded-lg border border-slate-300 px-2 py-1 text-sm text-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"
+              >
+                →
+              </button>
+            </div>
+          )}
+          </>
         )}
       </div>
 
