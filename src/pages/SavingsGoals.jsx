@@ -7,12 +7,20 @@ import {
   updateSavingsGoal,
 } from '../api/savingsGoals'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
+import CurrencyInput from '../components/CurrencyInput.jsx'
 import Loading from '../components/Loading.jsx'
 import Modal from '../components/Modal.jsx'
 import Spinner from '../components/Spinner.jsx'
+import { useToast } from '../context/ToastContext.jsx'
+import { errorMessage } from '../utils/apiError.js'
 
 function formatCurrency(value) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
+function formatDate(dateStr) {
+  const [year, month, day] = dateStr.split('-')
+  return `${day}/${month}/${year}`
 }
 
 function formatEstimatedDate(dateStr) {
@@ -30,6 +38,7 @@ const emptyForm = { name: '', target_amount: '', target_date: '' }
 const emptyContribution = { amount: '' }
 
 export default function SavingsGoals() {
+  const toast = useToast()
   const [goals, setGoals] = useState([])
   const [accounts, setAccounts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -44,6 +53,9 @@ export default function SavingsGoals() {
 
   useEffect(() => {
     load()
+    window.addEventListener('osiris:goal-updated', load)
+    return () => window.removeEventListener('osiris:goal-updated', load)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const totalCurrent = useMemo(() => goals.reduce((sum, goal) => sum + goal.current_amount, 0), [goals])
@@ -106,17 +118,26 @@ export default function SavingsGoals() {
         await createSavingsGoal(payload)
       }
 
+      toast.success(editingGoal ? 'Meta atualizada com sucesso.' : 'Meta criada com sucesso.')
       closeForm()
       load()
+    } catch (error) {
+      toast.error(errorMessage(error, 'Não foi possível salvar a meta.'))
     } finally {
       setSubmitting(false)
     }
   }
 
   async function handleDelete() {
-    await deleteSavingsGoal(deletingId)
-    setDeletingId(null)
-    load()
+    try {
+      await deleteSavingsGoal(deletingId)
+      toast.success('Meta removida.')
+      load()
+    } catch (error) {
+      toast.error(errorMessage(error, 'Não foi possível remover a meta.'))
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   async function handleContribute(event) {
@@ -132,9 +153,12 @@ export default function SavingsGoals() {
         current_amount: contributingGoal.current_amount + amount,
       })
 
+      toast.success(`${formatCurrency(amount)} adicionados à meta "${contributingGoal.name}".`)
       setContributingGoal(null)
       setContribution(emptyContribution)
       load()
+    } catch (error) {
+      toast.error(errorMessage(error, 'Não foi possível registrar a contribuição.'))
     } finally {
       setSubmittingContribution(false)
     }
@@ -182,10 +206,17 @@ export default function SavingsGoals() {
                 </p>
               )}
               <p className={`text-xs text-slate-500 dark:text-neutral-400 ${totalAccountsBalance > 0 ? 'mt-1' : ''}`}>
-                <span className={`font-medium ${freeBalance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-                  {formatCurrency(freeBalance)}
-                </span>{' '}
-                {freeBalance >= 0 ? 'continua livre, fora das metas.' : 'a mais do que o saldo em contas cobre — o valor guardado nas metas ultrapassa o que você tem disponível.'}
+                {freeBalance >= 0 ? (
+                  <>
+                    <span className="font-medium text-emerald-600 dark:text-emerald-400">{formatCurrency(freeBalance)}</span>{' '}
+                    continua livre, fora das metas.
+                  </>
+                ) : (
+                  <>
+                    O saldo das contas não cobre o valor guardado nas metas: faltam{' '}
+                    <span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(-freeBalance)}</span>.
+                  </>
+                )}
               </p>
             </div>
           )}
@@ -208,8 +239,8 @@ export default function SavingsGoals() {
                   {goal.target_date && (
                     <p className="text-xs text-slate-500 dark:text-neutral-400">
                       {remainingDays >= 0
-                        ? `${remainingDays} dia(s) até ${goal.target_date}`
-                        : `Prazo vencido em ${goal.target_date}`}
+                        ? `${remainingDays} dia(s) até ${formatDate(goal.target_date)}`
+                        : `Prazo vencido em ${formatDate(goal.target_date)}`}
                     </p>
                   )}
                 </div>
@@ -272,14 +303,11 @@ export default function SavingsGoals() {
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
           />
 
-          <input
-            type="number"
-            step="0.01"
-            min="0.01"
+          <CurrencyInput
             required
-            placeholder="Valor alvo"
+            placeholder="Valor alvo (R$ 0,00)"
             value={form.target_amount}
-            onChange={(event) => setForm({ ...form, target_amount: event.target.value })}
+            onChange={(value) => setForm({ ...form, target_amount: value })}
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
           />
 
@@ -310,15 +338,12 @@ export default function SavingsGoals() {
         title={`Contribuir para "${contributingGoal?.name ?? ''}"`}
       >
         <form onSubmit={handleContribute} className="grid gap-3">
-          <input
-            type="number"
-            step="0.01"
-            min="0.01"
+          <CurrencyInput
             required
             autoFocus
-            placeholder="Valor a adicionar"
+            placeholder="Valor a adicionar (R$ 0,00)"
             value={contribution.amount}
-            onChange={(event) => setContribution({ amount: event.target.value })}
+            onChange={(value) => setContribution({ amount: value })}
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
           />
           <button

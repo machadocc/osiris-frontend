@@ -4,6 +4,8 @@ import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import Loading from '../components/Loading.jsx'
 import Modal from '../components/Modal.jsx'
 import Spinner from '../components/Spinner.jsx'
+import { useToast } from '../context/ToastContext.jsx'
+import { errorMessage } from '../utils/apiError.js'
 
 function formatCurrency(value) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -12,6 +14,7 @@ function formatCurrency(value) {
 const emptyForm = { name: '', institution: '' }
 
 export default function Accounts() {
+  const toast = useToast()
   const [accounts, setAccounts] = useState([])
   const [form, setForm] = useState(emptyForm)
   const [loading, setLoading] = useState(true)
@@ -63,17 +66,26 @@ export default function Accounts() {
         await createAccount(payload)
       }
 
+      toast.success(editingAccount ? 'Conta atualizada com sucesso.' : 'Conta criada com sucesso.')
       closeForm()
       load()
+    } catch (error) {
+      toast.error(errorMessage(error, 'Não foi possível salvar a conta.'))
     } finally {
       setSubmitting(false)
     }
   }
 
   async function handleDelete() {
-    await deleteAccount(deletingId)
-    setDeletingId(null)
-    load()
+    try {
+      await deleteAccount(deletingId)
+      toast.success('Conta removida.')
+      load()
+    } catch (error) {
+      toast.error(errorMessage(error, 'Não foi possível remover a conta.'))
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   return (

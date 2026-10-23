@@ -5,10 +5,13 @@ import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import Loading from '../components/Loading.jsx'
 import Modal from '../components/Modal.jsx'
 import Spinner from '../components/Spinner.jsx'
+import { useToast } from '../context/ToastContext.jsx'
+import { errorMessage } from '../utils/apiError.js'
 
 const emptyForm = { name: '', type: 'expense', color: '#64748b', keywords: '' }
 
 export default function Categories() {
+  const toast = useToast()
   const [categories, setCategories] = useState([])
   const [form, setForm] = useState(emptyForm)
   const [loading, setLoading] = useState(true)
@@ -58,17 +61,26 @@ export default function Categories() {
         await createCategory(form)
       }
 
+      toast.success(editingCategory ? 'Categoria atualizada com sucesso.' : 'Categoria criada com sucesso.')
       closeForm()
       load()
+    } catch (error) {
+      toast.error(errorMessage(error, 'Não foi possível salvar a categoria.'))
     } finally {
       setSubmitting(false)
     }
   }
 
   async function handleDelete() {
-    await deleteCategory(deletingId)
-    setDeletingId(null)
-    load()
+    try {
+      await deleteCategory(deletingId)
+      toast.success('Categoria removida.')
+      load()
+    } catch (error) {
+      toast.error(errorMessage(error, 'Não foi possível remover a categoria.'))
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   return (

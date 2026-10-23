@@ -4,6 +4,8 @@ import { createTransaction } from '../api/transactions'
 import CategoryOptionGroups from './CategoryOptionGroups.jsx'
 import CategoryTypeTag from './CategoryTypeTag.jsx'
 import Modal from './Modal.jsx'
+import { useToast } from '../context/ToastContext.jsx'
+import { errorMessage } from '../utils/apiError.js'
 
 const FALLBACK_COLORS = { income: '#10b981', expense: '#ef4444' }
 
@@ -37,6 +39,7 @@ async function ensureFallbackCategories(onCategoriesCreated) {
 }
 
 export default function ImportStatementModal({ open, onClose, categories, onCategoriesCreated, accounts, onImported }) {
+  const toast = useToast()
   const [status, setStatus] = useState('idle')
   const [progress, setProgress] = useState(null)
   const [rows, setRows] = useState([])
@@ -104,24 +107,37 @@ export default function ImportStatementModal({ open, onClose, categories, onCate
 
   async function handleImport() {
     const toImport = rows.filter((row) => row.included && row.categoryId)
+    const importedIds = new Set()
     setStatus('importing')
     setProgress({ page: 0, totalPages: toImport.length })
 
-    for (let index = 0; index < toImport.length; index += 1) {
-      const row = toImport[index]
-      // eslint-disable-next-line no-await-in-loop
-      await createTransaction({
-        category_id: row.categoryId,
-        account_id: accountId,
-        amount: row.amount,
-        description: row.description,
-        date: row.date,
-      })
-      setProgress({ page: index + 1, totalPages: toImport.length })
+    try {
+      for (let index = 0; index < toImport.length; index += 1) {
+        const row = toImport[index]
+        // eslint-disable-next-line no-await-in-loop
+        await createTransaction({
+          category_id: row.categoryId,
+          account_id: accountId,
+          amount: row.amount,
+          description: row.description,
+          date: row.date,
+        })
+        importedIds.add(row.id)
+        setProgress({ page: index + 1, totalPages: toImport.length })
+      }
+    } catch (error) {
+      toast.error(
+        `Importação interrompida após ${importedIds.size} de ${toImport.length} lançamentos. ${errorMessage(error, '') ?? ''}`.trim(),
+      )
+      setRows((current) => current.map((row) => (importedIds.has(row.id) ? { ...row, included: false } : row)))
+      setStatus('review')
+      if (importedIds.size > 0) onImported()
+      return
     }
 
     setImportedCount(toImport.length)
     setStatus('done')
+    toast.success(`${toImport.length} transação(ões) importada(s) com sucesso.`)
     onImported()
   }
 

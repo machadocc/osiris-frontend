@@ -170,7 +170,11 @@ export default function Dashboard() {
       getDashboardSummary({ month }).then(setSummary)
     }
     window.addEventListener('osiris:transaction-created', handleExternalCreate)
-    return () => window.removeEventListener('osiris:transaction-created', handleExternalCreate)
+    window.addEventListener('osiris:goal-updated', handleExternalCreate)
+    return () => {
+      window.removeEventListener('osiris:transaction-created', handleExternalCreate)
+      window.removeEventListener('osiris:goal-updated', handleExternalCreate)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [month])
 
@@ -181,6 +185,7 @@ export default function Dashboard() {
   const totalAccountsBalance = summary.accounts.reduce((sum, account) => sum + account.balance, 0)
 
   const totalSavedInGoals = summary.savings_goals.reduce((sum, goal) => sum + goal.current_amount, 0)
+  const freeBalance = totalAccountsBalance - totalSavedInGoals
   const totalGoalsTarget = summary.savings_goals.reduce((sum, goal) => sum + goal.target_amount, 0)
   const goalsOverallPercentage =
     totalGoalsTarget > 0 ? Math.min(Math.round((totalSavedInGoals / totalGoalsTarget) * 1000) / 10, 100) : 0
@@ -278,9 +283,13 @@ export default function Dashboard() {
                 />
               </div>
               <div className="mt-1.5 flex items-center justify-between gap-2 text-xs">
-                <span className="flex items-center gap-1.5 text-slate-600 dark:text-neutral-300">
-                  <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
-                  {formatCurrency(totalAccountsBalance - totalSavedInGoals)} livre
+                <span
+                  className={`flex items-center gap-1.5 ${
+                    freeBalance < 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-600 dark:text-neutral-300'
+                  }`}
+                >
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${freeBalance < 0 ? 'bg-red-500' : 'bg-emerald-500'}`} />
+                  {formatCurrency(freeBalance)} livre
                 </span>
                 <span className="flex items-center gap-1.5 text-slate-600 dark:text-neutral-300">
                   <span className="h-2 w-2 shrink-0 rounded-full bg-indigo-500" />

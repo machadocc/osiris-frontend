@@ -9,9 +9,12 @@ import {
 import CategoryOptionGroups from '../components/CategoryOptionGroups.jsx'
 import CategoryTypeTag from '../components/CategoryTypeTag.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
+import CurrencyInput from '../components/CurrencyInput.jsx'
 import Loading from '../components/Loading.jsx'
 import Modal from '../components/Modal.jsx'
 import Spinner from '../components/Spinner.jsx'
+import { useToast } from '../context/ToastContext.jsx'
+import { errorMessage } from '../utils/apiError.js'
 
 function formatCurrency(value) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -24,6 +27,7 @@ function currentMonth() {
 const emptyForm = { category_id: '', name: '', limit_amount: '', reference_month: `${currentMonth()}-01` }
 
 export default function SpendingLimits() {
+  const toast = useToast()
   const [spendingLimits, setSpendingLimits] = useState([])
   const [categories, setCategories] = useState([])
   const [form, setForm] = useState(emptyForm)
@@ -88,17 +92,26 @@ export default function SpendingLimits() {
         await createSpendingLimit(payload)
       }
 
+      toast.success(editingLimit ? 'Limite atualizado com sucesso.' : 'Limite criado com sucesso.')
       closeForm()
       load()
+    } catch (error) {
+      toast.error(errorMessage(error, 'Não foi possível salvar o limite.'))
     } finally {
       setSubmitting(false)
     }
   }
 
   async function handleDelete() {
-    await deleteSpendingLimit(deletingId)
-    setDeletingId(null)
-    load()
+    try {
+      await deleteSpendingLimit(deletingId)
+      toast.success('Limite removido.')
+      load()
+    } catch (error) {
+      toast.error(errorMessage(error, 'Não foi possível remover o limite.'))
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   return (
@@ -195,14 +208,11 @@ export default function SpendingLimits() {
             <CategoryTypeTag type={categories.find((category) => String(category.id) === String(form.category_id))?.type} />
           </div>
 
-          <input
-            type="number"
-            step="0.01"
-            min="0.01"
+          <CurrencyInput
             required
-            placeholder="Valor limite"
+            placeholder="Valor limite (R$ 0,00)"
             value={form.limit_amount}
-            onChange={(event) => setForm({ ...form, limit_amount: event.target.value })}
+            onChange={(value) => setForm({ ...form, limit_amount: value })}
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
           />
 

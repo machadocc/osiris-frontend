@@ -10,9 +10,12 @@ import {
 import CategoryOptionGroups from '../components/CategoryOptionGroups.jsx'
 import CategoryTypeTag from '../components/CategoryTypeTag.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
+import CurrencyInput from '../components/CurrencyInput.jsx'
 import Loading from '../components/Loading.jsx'
 import Modal from '../components/Modal.jsx'
 import Spinner from '../components/Spinner.jsx'
+import { useToast } from '../context/ToastContext.jsx'
+import { errorMessage } from '../utils/apiError.js'
 
 function formatCurrency(value) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -21,6 +24,7 @@ function formatCurrency(value) {
 const emptyForm = { category_id: '', account_id: '', amount: '', description: '', day_of_month: '5' }
 
 export default function RecurringTransactions() {
+  const toast = useToast()
   const [recurringTransactions, setRecurringTransactions] = useState([])
   const [categories, setCategories] = useState([])
   const [accounts, setAccounts] = useState([])
@@ -90,24 +94,36 @@ export default function RecurringTransactions() {
         await createRecurringTransaction(payload)
       }
 
+      toast.success(editingItem ? 'Lançamento recorrente atualizado.' : 'Lançamento recorrente criado.')
       closeForm()
       load()
+    } catch (error) {
+      toast.error(errorMessage(error, 'Não foi possível salvar o lançamento recorrente.'))
     } finally {
       setSubmitting(false)
     }
   }
 
   async function handleDelete() {
-    await deleteRecurringTransaction(deletingId)
-    setDeletingId(null)
-    load()
+    try {
+      await deleteRecurringTransaction(deletingId)
+      toast.success('Lançamento recorrente removido.')
+      load()
+    } catch (error) {
+      toast.error(errorMessage(error, 'Não foi possível remover o lançamento recorrente.'))
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   async function toggleActive(item) {
     setTogglingId(item.id)
     try {
       await updateRecurringTransaction(item.id, { active: !item.active })
+      toast.success(item.active ? 'Lançamento recorrente pausado.' : 'Lançamento recorrente retomado.')
       load()
+    } catch (error) {
+      toast.error(errorMessage(error, 'Não foi possível alterar o lançamento recorrente.'))
     } finally {
       setTogglingId(null)
     }
@@ -219,14 +235,11 @@ export default function RecurringTransactions() {
             ))}
           </select>
 
-          <input
-            type="number"
-            step="0.01"
-            min="0.01"
+          <CurrencyInput
             required
-            placeholder="Valor"
+            placeholder="Valor (R$ 0,00)"
             value={form.amount}
-            onChange={(event) => setForm({ ...form, amount: event.target.value })}
+            onChange={(value) => setForm({ ...form, amount: value })}
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
           />
 
